@@ -1,0 +1,3 @@
+1094fda2deb74c9376345308d72f92596b0ea59c5c655b6e8fe98f1d83590e4c  downloads/chi-circuit-windows-x86_64.zip
+bbab2f77b317f4512c994512d2a64975fc3fa2138075e93c16e8686c16b87bf9  downloads/chi-circuit-source.zip
+b54a4546e03996c74b914b754d1e00b37a0f2c8b7ad2fa8f78639e099505fb47  media/gameplay.mp4
