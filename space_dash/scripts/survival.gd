@@ -12,8 +12,25 @@ var hud: Node2D
 var font: Font
 var tiles: Array[Texture2D] = []
 var assets_status := "ORIGINAL GRASS ASSETS PENDING — SOURCE CHECKERBOARD FALLBACK"
+var profiling_enabled := false
+var last_tick_cpu_us := 0
+var last_draw_cpu_us := 0
+var physics_since_frame := 0
+var ground_chunks: Dictionary = {}
+var ground_chunk_order: Array[Vector2i] = []
+var scaled_tiles: Array[Image] = []
+var terrain_build_count := 0
+var label_widths: Dictionary = {}
+const CHUNK_TILES := 16
+const CHUNK_SIZE := 512
+const CHUNK_CACHE_LIMIT := 24
+const NEUTRAL_WORD := Color("e0e5d5")
+const TYPED_PREFIX := Color("ffe08a")
 
 func _ready() -> void:
+	profiling_enabled = OS.get_cmdline_user_args().has("--profile")
+	if profiling_enabled:
+		state = load("res://tests/profiled_state.gd").new(1764)
 	font = ThemeDB.fallback_font
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	load_tiles()
@@ -28,7 +45,12 @@ func _ready() -> void:
 	hud.set_script(Hud)
 	hud.game = self
 	layer.add_child(hud)
-	if OS.get_cmdline_user_args().has("--playtest"):
+	if profiling_enabled:
+		var driver := Node.new()
+		driver.set_script(load("res://tests/profile_render.gd"))
+		driver.game = self
+		add_child(driver)
+	elif OS.get_cmdline_user_args().has("--playtest"):
 		var driver := Node.new()
 		driver.set_script(load("res://tests/render_playtest.gd"))
 		driver.game = self
@@ -37,6 +59,9 @@ func _ready() -> void:
 func load_tiles() -> void:
 	tiles.clear()
 	tile_verification.clear()
+	scaled_tiles.clear()
+	ground_chunks.clear()
+	ground_chunk_order.clear()
 	for i in TILE_NAMES.size():
 		var path: String = "res://assets/env_tiles/" + TILE_NAMES[i]
 		var image: Image
@@ -72,9 +97,17 @@ func load_tiles() -> void:
 		tile_verification.append({"name": TILE_NAMES[i], "original_file_sha256": TILE_HASHES[i], "file_bytes_verified": file_verified, "pixel_sha256": pixel_hash, "width": 16, "height": 16, "verified": true})
 	if tiles.size() == 3:
 		assets_status = "ORIGINAL GRASS TILES VERIFIED / ACTOR ART PLACEHOLDERS"
+		for tile in tiles:
+			var scaled := tile.get_image()
+			scaled.resize(32, 32, Image.INTERPOLATE_NEAREST)
+			scaled_tiles.append(scaled)
 
 func _physics_process(_delta: float) -> void:
+	var started := Time.get_ticks_usec() if profiling_enabled else 0
 	state.tick()
+	if profiling_enabled:
+		last_tick_cpu_us = Time.get_ticks_usec() - started
+		physics_since_frame += 1
 	camera.position = state.camera_pos.round()
 	queue_redraw()
 	if is_instance_valid(hud):
@@ -130,40 +163,72 @@ func handle_click(pos: Vector2) -> void:
 
 func text(text_value: String, pos: Vector2, size: int, color: Color, center: bool = true) -> void:
 	if center:
-		pos.x -= font.get_string_size(text_value, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x * 0.5
+		pos.x -= text_width(text_value, size) * 0.5
 	draw_string_outline(font, pos, text_value, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 4, Color("173622"))
 	draw_string(font, pos, text_value, HORIZONTAL_ALIGNMENT_LEFT, -1, size, color)
+
+func text_width(value: String, size: int) -> float:
+	var key := str(size) + "/" + value
+	if not label_widths.has(key):
+		label_widths[key] = font.get_string_size(value, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+	return label_widths[key]
+
+func ground_chunk(key: Vector2i) -> Texture2D:
+	if ground_chunks.has(key):
+		ground_chunk_order.erase(key)
+		ground_chunk_order.append(key)
+		return ground_chunks[key]
+	var image := Image.create(CHUNK_SIZE, CHUNK_SIZE, false, Image.FORMAT_RGBA8)
+	for y in CHUNK_TILES:
+		for x in CHUNK_TILES:
+			var cell := key * CHUNK_TILES + Vector2i(x, y)
+			image.blit_rect(scaled_tiles[R.tile_index(cell)], Rect2i(0, 0, 32, 32), Vector2i(x * 32, y * 32))
+	var texture := ImageTexture.create_from_image(image)
+	if ground_chunk_order.size() >= CHUNK_CACHE_LIMIT:
+		ground_chunks.erase(ground_chunk_order.pop_front())
+	ground_chunks[key] = texture
+	ground_chunk_order.append(key)
+	terrain_build_count += 1
+	return texture
+
+func draw_ground(view: Rect2) -> void:
+	if scaled_tiles.size() == 3:
+		# Cache exact source pixels per512px chunk; tint once at draw, preserving NN.
+		var area := view.grow(32)
+		for y in range(floori(area.position.y / CHUNK_SIZE), ceili(area.end.y / CHUNK_SIZE)):
+			for x in range(floori(area.position.x / CHUNK_SIZE), ceili(area.end.x / CHUNK_SIZE)):
+				var key := Vector2i(x, y)
+				draw_texture(ground_chunk(key), Vector2(key) * CHUNK_SIZE, Color8(178, 236, 136))
+	else:
+		for y in range(floori(view.position.y / 32) - 1, ceili(view.end.y / 32) + 1):
+			for x in range(floori(view.position.x / 32) - 1, ceili(view.end.x / 32) + 1):
+				draw_rect(Rect2(x * 32, y * 32, 32, 32), Color8(78, 152, 88) if (x + y) % 2 == 0 else Color8(98, 176, 102))
 
 func _draw() -> void:
 	if font == null:
 		return
+	var started := Time.get_ticks_usec() if profiling_enabled else 0
 	var view: Rect2 = state.viewport()
-	for y in range(floori(view.position.y / 32) - 1, ceili(view.end.y / 32) + 1):
-		for x in range(floori(view.position.x / 32) - 1, ceili(view.end.x / 32) + 1):
-			var cell := Vector2i(x, y)
-			var rect := Rect2(Vector2(cell) * 32, Vector2(32, 32))
-			if tiles.size() == 3:
-				draw_texture_rect(tiles[R.tile_index(cell)], rect, false, Color8(178, 236, 136))
-			else:
-				draw_rect(rect, Color8(78, 152, 88) if (x + y) % 2 == 0 else Color8(98, 176, 102))
-	var active: Dictionary = state.find_orb(state.active_id)
+	draw_ground(view)
+	var feedback: Dictionary = state.typing_feedback()
+	var active: Dictionary = state.find_orb(feedback.selected_id)
 	if not active.is_empty():
-		draw_line(state.player, active.pos, Color(1, 0.85, 0.3, 0.55), 2, true)
+		draw_line(state.player, active.pos, Color(1, 0.85, 0.3, 0.20), 1, true)
 	for trail in state.trails:
 		draw_line(trail.from, trail.to, Color(0.7, 1, 1, float(trail.life) / 0.3 * 0.4), 5, true)
 	for orb in state.orbs:
 		if not view.grow(140).has_point(orb.pos):
 			continue
 		var pos: Vector2 = orb.pos
-		var locked: bool = orb.id == state.active_id
-		var color := Color("ffdf70") if locked else Color("9cffff")
+		var style: Dictionary = state.orb_feedback(orb, feedback)
+		var color := Color("ffdf70") if orb.id == feedback.selected_id else Color("9cffff")
 		var bob := sin(state.elapsed * 2.0 + float(orb.id)) * 2.0
-		draw_circle(pos + Vector2(0, 7), 8, Color(0, 0, 0, 0.15))
-		draw_circle(pos + Vector2(0, bob), 10 if locked else 7, Color(color, 0.25))
-		draw_circle(pos + Vector2(0, bob), 4, color)
-		text(orb.word, pos + Vector2(0, 25), 16, color)
-		if not state.buffer.is_empty() and String(orb.word).begins_with(state.buffer) and state.selectable(orb):
-			text(state.buffer, pos + Vector2(0, 42), 12, Color.WHITE)
+		draw_circle(pos + Vector2(0, bob), 8 if style.lit else 7, Color(color, 0.14 if style.lit else 0.015))
+		draw_circle(pos + Vector2(0, bob), 4, Color(color, style.body_alpha))
+		var word_pos := pos + Vector2(-text_width(orb.word, 16) * 0.5, 25)
+		text(orb.word, word_pos, 16, NEUTRAL_WORD, false)
+		if style.prefix_length > 0:
+			draw_string(font, word_pos, String(orb.word).left(style.prefix_length), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, TYPED_PREFIX)
 	for enemy in state.enemies:
 		if not view.grow(100).has_point(enemy.pos):
 			continue
@@ -185,3 +250,5 @@ func _draw() -> void:
 	draw_circle(p, 11, Color("204f49"))
 	draw_circle(p + Vector2(0, -2), 8, Color("f4f0d0"))
 	draw_line(p + Vector2(-5, 4), p + Vector2(-12, 17), Color("71f5e3"), 4, true)
+	if profiling_enabled:
+		last_draw_cpu_us = Time.get_ticks_usec() - started

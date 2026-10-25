@@ -1,11 +1,12 @@
-; Separate project: historical source-based survival revision. No final export yet.
+; Source-based survival game with v0.3.0 user playtest fixes.
 config_version=5
 
 [application]
 config/name="Type Grass Space Dash"
 run/main_scene="res://survival.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
-config/description="Source-based Space-to-dash survival reconstruction; reference grass assets pending."
+config/description="Space-to-dash survival with progressive typing feedback and nearby enemy aggro."
+config/version="0.3.0"
 
 [display]
 window/size/viewport_width=960

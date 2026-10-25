@@ -53,6 +53,14 @@ var eligible_cache_difficulty := -1
 var eligible_cache_revision := -1
 var eligible_cache_size := -1
 var eligible_cache_words := PackedStringArray()
+var eligible_set_cache: Dictionary = {}
+var bank_entries_cache: Dictionary = {}
+var spacing_grid: Dictionary = {}
+var spacing_grid_revision := -1
+var spacing_grid_size := -1
+const SPACING_CELL := 104.0
+const AGGRO_ENTER := 240.0
+const AGGRO_EXIT := 340.0
 
 func _init(seed_value: int = 0) -> void:
 	if seed_value == 0:
@@ -78,6 +86,28 @@ func matches(prefix: String) -> Array[Dictionary]:
 		if selectable(orb) and String(orb.word).begins_with(prefix):
 			result.append(orb)
 	return result
+
+func typing_feedback() -> Dictionary:
+	# One candidate pass per draw, not one full matching scan per orb.
+	var feedback := {"prefix": buffer, "candidates": {}, "selected_id": -1}
+	if buffer.is_empty():
+		return feedback
+	var found := matches(buffer)
+	for orb in found:
+		feedback.candidates[orb.id] = true
+	if found.size() == 1:
+		feedback.selected_id = found[0].id
+	else:
+		for orb in found:
+			if orb.word == buffer:
+				feedback.selected_id = orb.id
+				break
+	return feedback
+
+func orb_feedback(orb: Dictionary, feedback: Dictionary) -> Dictionary:
+	var matches_prefix: bool = feedback.candidates.has(orb.id)
+	var lit: bool = matches_prefix and (feedback.selected_id < 0 or feedback.selected_id == orb.id)
+	return {"prefix_length": buffer.length() if matches_prefix else 0, "lit": lit, "body_alpha": 0.95 if lit else 0.08}
 
 func recompute_target(prefer_exact: bool = false) -> void:
 	var previous := active_id
@@ -219,8 +249,7 @@ func step_dash() -> void:
 			orbs.erase(orb)
 			orb_revision += 1
 		dash_orb_id = -1
-		if maintenance_enabled:
-			ensure_local_coverage()
+		# Coverage is consolidated into the single maintenance pass in tick().
 
 func accuracy() -> float:
 	return float(correct_keys) / total_keys if total_keys > 0 else 1.0
@@ -274,8 +303,7 @@ func tick() -> void:
 	process_typing(confirm, edit)
 	step_dash()
 	if maintenance_enabled:
-		if seed_surrounding():
-			ensure_local_coverage()
+		seed_surrounding()
 		maintain_orbs()
 	if enemy_updates_enabled:
 		update_enemies()
@@ -347,7 +375,8 @@ func load_high_score() -> void:
 		high_score = maxi(0, int(config.get_value("run", "high_score", 0)))
 
 func make_enemy(kind: int, pos: Vector2) -> Dictionary:
-	var enemy := {"id": next_enemy_id, "kind": kind, "pos": pos, "hp": R.ENEMY_HP[kind], "speed": R.ENEMY_SPEED[kind], "radius": R.ENEMY_RADIUS[kind], "facing": (player - pos).angle(), "heading": rng.randf_range(0, TAU), "hurt": Vector2.ZERO}
+	var heading := rng.randf_range(0, TAU)
+	var enemy := {"id": next_enemy_id, "kind": kind, "pos": pos, "hp": R.ENEMY_HP[kind], "speed": R.ENEMY_SPEED[kind], "radius": R.ENEMY_RADIUS[kind], "facing": heading, "heading": heading, "aggro": false, "hurt": Vector2.ZERO}
 	next_enemy_id += 1
 	return enemy
 
@@ -363,10 +392,14 @@ func update_enemies() -> void:
 	for enemy in enemies:
 		var offset: Vector2 = player - enemy.pos
 		var distance := offset.length()
-		enemy.facing = offset.angle()
 		var speed: float = enemy.speed
-		var chase: bool = enemy.kind == 2 or (enemy.kind == 0 and distance < 440) or (enemy.kind == 1 and distance < 340)
-		var direction: float = enemy.facing
+		var chase: bool = enemy.get("aggro", false)
+		if chase and distance > AGGRO_EXIT:
+			chase = false
+		elif not chase and distance <= AGGRO_ENTER:
+			chase = true
+		enemy.aggro = chase
+		var direction: float = offset.angle()
 		if chase:
 			if enemy.kind == 0:
 				speed *= 1.2
@@ -377,6 +410,7 @@ func update_enemies() -> void:
 			enemy.heading += deg_to_rad(rng.randf_range(-3, 3))
 			direction = enemy.heading
 			enemy.pos += Vector2(cos(direction) * speed, sin(direction) * speed * 0.55)
+		enemy.facing = direction
 		enemy.pos = R.arena_clamp(enemy.pos, 35)
 		enemy.hurt = Vector2(enemy.hurt).lerp(Vector2.ZERO, 0.22)
 		if player.distance_to(enemy.pos) <= float(enemy.radius) + R.PLAYER_RADIUS:
@@ -410,10 +444,44 @@ func eligible_words(region: Rect2) -> PackedStringArray:
 	var bounds := region.merge(viewport())
 	if bounds == eligible_cache_region and difficulty == eligible_cache_difficulty and orb_revision == eligible_cache_revision and orbs.size() == eligible_cache_size:
 		return eligible_cache_words
+	# Cache by relevant WORD SET, not fractional camera coordinates. Build prefix
+	# dictionaries once so pool eligibility is O(pool*word_length), not pool*orbs.
+	var blocked := {}
+	for orb in orbs:
+		if R.contains_inclusive(bounds, orb.pos):
+			blocked[String(orb.word).to_lower()] = true
+	var names := PackedStringArray(blocked.keys())
+	names.sort()
+	var signature := str(difficulty) + ":" + "|".join(names)
 	var result := PackedStringArray()
-	for word in R.word_pool(difficulty):
-		if word_available(word, region):
-			result.append(word)
+	if eligible_set_cache.has(signature):
+		result = eligible_set_cache[signature]
+	else:
+		var prefixes := {}
+		for word in names:
+			for length in range(1, word.length() + 1):
+				prefixes[word.left(length)] = true
+		if not bank_entries_cache.has(difficulty):
+			var entries: Array[Dictionary] = []
+			for word in R.word_pool(difficulty):
+				var lower := word.to_lower()
+				var word_prefixes := PackedStringArray()
+				for length in range(1, lower.length() + 1):
+					word_prefixes.append(lower.left(length))
+				entries.append({"word": word, "lower": lower, "prefixes": word_prefixes})
+			bank_entries_cache[difficulty] = entries
+		for entry in bank_entries_cache[difficulty]:
+			var conflict: bool = prefixes.has(entry.lower)
+			if not conflict:
+				for prefix in entry.prefixes:
+					if blocked.has(prefix):
+						conflict = true
+						break
+			if not conflict:
+				result.append(entry.word) # Duplicate bank entries retain weighting.
+		if eligible_set_cache.size() >= 64:
+			eligible_set_cache.clear()
+		eligible_set_cache[signature] = result
 	eligible_cache_region = bounds
 	eligible_cache_difficulty = difficulty
 	eligible_cache_revision = orb_revision
@@ -429,6 +497,19 @@ func place_orb(region: Rect2) -> bool:
 	if region.size.x <= 0 or region.size.y <= 0:
 		last_spawn_failure = "empty_region"
 		return false
+	var pool := eligible_words(region)
+	if pool.is_empty():
+		last_spawn_failure = "no_eligible_word"
+		return false # No positional sampling can fix an exhausted word set.
+	if spacing_grid_revision != orb_revision or spacing_grid_size != orbs.size():
+		spacing_grid.clear()
+		for other in orbs:
+			var cell := Vector2i(floori(other.pos.x / SPACING_CELL), floori(other.pos.y / SPACING_CELL))
+			if not spacing_grid.has(cell):
+				spacing_grid[cell] = []
+			spacing_grid[cell].append(other.pos)
+		spacing_grid_revision = orb_revision
+		spacing_grid_size = orbs.size()
 	# Keep the source's two overwritten initial X/Y draws (RNG algorithm differs).
 	var pos := Vector2(rng.randf_range(region.position.x, region.end.x), rng.randf_range(region.position.y, region.end.y))
 	var found := false
@@ -439,9 +520,19 @@ func place_orb(region: Rect2) -> bool:
 		for ignored in attempts[phase_index]:
 			pos = Vector2(rng.randf_range(region.position.x, region.end.x), rng.randf_range(region.position.y, region.end.y))
 			found = true
-			for other in orbs:
-				if pos.distance_to(other.pos) < spacing:
-					found = false
+			var cell := Vector2i(floori(pos.x / SPACING_CELL), floori(pos.y / SPACING_CELL))
+			for dy in range(-1, 2):
+				for dx in range(-1, 2):
+					var neighbor := cell + Vector2i(dx, dy)
+					if not spacing_grid.has(neighbor):
+						continue
+					for other in spacing_grid[neighbor]:
+						if pos.distance_squared_to(other) < spacing * spacing:
+							found = false
+							break
+					if not found:
+						break
+				if not found:
 					break
 			if found:
 				break
@@ -449,10 +540,6 @@ func place_orb(region: Rect2) -> bool:
 			break
 	if not found:
 		pos = Vector2(rng.randf_range(region.position.x, region.end.x), rng.randf_range(region.position.y, region.end.y))
-	var pool := eligible_words(region)
-	if pool.is_empty():
-		last_spawn_failure = "no_eligible_word"
-		return false
 	var word: String = pool[rng.randi_range(0, pool.size() - 1)]
 	var details := R.reward(word, player.distance_to(pos))
 	orbs.append({"id": next_orb_id, "pos": pos, "word": word, "reward": details.reward, "tier": details.tier})
@@ -487,6 +574,8 @@ func seed_surrounding() -> bool:
 					break
 				if place_orb(region):
 					placed += 1
+				elif last_spawn_failure == "no_eligible_word":
+					break
 	return true
 
 func restock_minimum(region: Rect2) -> int:
@@ -510,20 +599,27 @@ func ensure_local_coverage() -> void:
 	if active_id >= 0 and find_orb(active_id).is_empty():
 		active_id = -1 # Stable identity: pruning must not silently retarget another orb.
 	var near_region := Rect2(player - R.NEAR_RADII, R.NEAR_RADII * 2.0).intersection(R.ORB_BOUNDS)
+	var near_count := 0
+	for orb in orbs:
+		if ((Vector2(orb.pos) - player) / R.NEAR_RADII).length_squared() <= 1.0:
+			near_count += 1
 	for ignored in 32:
-		var count := 0
-		for orb in orbs:
-			if ((Vector2(orb.pos) - player) / R.NEAR_RADII).length_squared() <= 1.0:
-				count += 1
-		if count >= R.NEAR_TARGET or orbs.size() >= R.ORB_MAX:
+		if near_count >= R.NEAR_TARGET or orbs.size() >= R.ORB_MAX:
 			break
-		place_orb(near_region)
+		if place_orb(near_region):
+			if ((Vector2(orbs[-1].pos) - player) / R.NEAR_RADII).length_squared() <= 1.0:
+				near_count += 1
+		elif last_spawn_failure == "no_eligible_word":
+			break
 	var region := viewport(Vector2(56, 42)).intersection(R.ORB_BOUNDS)
+	var visible_count := 0
+	for orb in orbs:
+		if R.contains_inclusive(region, orb.pos):
+			visible_count += 1
 	for ignored in 80:
-		var count := 0
-		for orb in orbs:
-			if R.contains_inclusive(region, orb.pos):
-				count += 1
-		if count >= R.VIEW_TARGET or orbs.size() >= R.ORB_MAX:
+		if visible_count >= R.VIEW_TARGET or orbs.size() >= R.ORB_MAX:
 			break
-		place_orb(region)
+		if place_orb(region):
+			visible_count += 1
+		elif last_spawn_failure == "no_eligible_word":
+			break

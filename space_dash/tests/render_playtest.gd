@@ -83,7 +83,7 @@ func screenshot(name: String) -> void:
 	game.hud.queue_redraw()
 	await RenderingServer.frame_post_draw
 	get_viewport().get_texture().get_image().save_png(output_path(name + ".png"))
-	capture_metadata[name] = {"camera": [game.camera.position.x, game.camera.position.y], "phase": game.state.phase, "timer": game.state.timer}
+	capture_metadata[name] = {"camera": [game.camera.position.x, game.camera.position.y], "phase": game.state.phase, "timer": game.state.timer, "prefix": game.state.buffer, "candidates": game.state.typing_feedback().candidates.size(), "selected_id": game.state.typing_feedback().selected_id}
 
 func choose_orb(near_destination: bool = false) -> Dictionary:
 	var s = game.state
@@ -96,6 +96,8 @@ func choose_orb(near_destination: bool = false) -> Dictionary:
 		if distance < 75:
 			continue
 		var value: float = distance * 0.2
+		if not near_destination and not captured.has("06-shared-prefix") and s.matches(String(orb.word).left(1)).size() > 1:
+			value += 10000
 		if near_destination:
 			if not s.viewport(Vector2(60, 60)).has_point(orb.pos):
 				continue
@@ -165,6 +167,22 @@ func _process(delta: float) -> void:
 		return
 	if run_number == 1:
 		screenshot("02-survival")
+		var feedback: Dictionary = s.typing_feedback()
+		if not s.buffer.is_empty():
+			if feedback.candidates.size() > 1 and feedback.selected_id < 0 and not captured.has("06-shared-prefix"):
+				screenshot("06-shared-prefix")
+				next_key = clock + 0.16
+				return
+			var selected: Dictionary = s.find_orb(feedback.selected_id)
+			if not selected.is_empty():
+				if s.buffer == selected.word and not captured.has("08-completed-word"):
+					screenshot("08-completed-word")
+					next_key = clock + 0.16
+					return
+				if s.buffer != selected.word and not captured.has("07-unique-prefix"):
+					screenshot("07-unique-prefix")
+					next_key = clock + 0.16
+					return
 		if s.elapsed > 6 and not pause_finished and pause_started < 0:
 			key(KEY_ESCAPE)
 			pause_started = clock
@@ -232,6 +250,9 @@ func finish() -> void:
 		failures.append("top edge of shared resume hitbox failed")
 	if game.tiles.size() != 3:
 		failures.append("original grass tiles did not load")
+	for required in ["06-shared-prefix", "07-unique-prefix", "08-completed-word"]:
+		if not captured.has(required):
+			failures.append("missing progressive feedback capture:" + required)
 	var file := FileAccess.open(output_path("render-playtest.json"), FileAccess.WRITE)
 	file.store_string(JSON.stringify({"passed": failures.is_empty(), "failures": failures, "runs": run_number, "mid_dash_queue_observed": queue_observed, "space_required": saw_space_required, "resume_top_edge_verified": resume_top_clicked, "grass_tiles_loaded": game.tiles.size(), "tile_verification": game.tile_verification, "captures": capture_metadata, "assets_status": game.assets_status, "seconds": clock, "actions": actions}, "  "))
 	print("SURVIVAL RENDER: ", "PASS" if failures.is_empty() else "FAIL", " ", failures)

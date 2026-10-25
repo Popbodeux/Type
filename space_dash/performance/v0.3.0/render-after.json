@@ -1,0 +1,104 @@
+{
+  "catchup_frames": 3,
+  "completed_dashes": 28,
+  "draw_calls": {
+    "max": 234.0,
+    "mean": 173.779683377309,
+    "p50": 169.0,
+    "p95": 213.0,
+    "p99": 228.0
+  },
+  "draw_submission_cpu_ms": {
+    "max": 5.004,
+    "mean": 0.722827176781003,
+    "p50": 0.678,
+    "p95": 1.086,
+    "p99": 1.591
+  },
+  "ffmpeg_running": false,
+  "frame_interval_ms": {
+    "max": 63.524,
+    "mean": 6.59864291996482,
+    "p50": 6.303,
+    "p95": 9.079,
+    "p99": 12.342
+  },
+  "nested_model_cpu": {
+    "coverage": {
+      "calls": 1080,
+      "max_ms": 1.374,
+      "mean_ms": 0.243863888888889,
+      "p50_ms": 0.158,
+      "p95_ms": 0.749,
+      "p99_ms": 0.978,
+      "total_ms": 263.373
+    },
+    "eligible_words": {
+      "calls": 577,
+      "max_ms": 0.926,
+      "mean_ms": 0.213008665511265,
+      "p50_ms": 0.173,
+      "p95_ms": 0.38,
+      "p99_ms": 0.449,
+      "total_ms": 122.906
+    },
+    "enemies": {
+      "calls": 1080,
+      "max_ms": 0.196,
+      "mean_ms": 0.0396305555555556,
+      "p50_ms": 0.038,
+      "p95_ms": 0.055,
+      "p99_ms": 0.099,
+      "total_ms": 42.801
+    },
+    "place_orb": {
+      "calls": 577,
+      "max_ms": 1.012,
+      "mean_ms": 0.329129982668977,
+      "p50_ms": 0.274,
+      "p95_ms": 0.591,
+      "p99_ms": 0.688,
+      "total_ms": 189.908
+    },
+    "reset": {
+      "calls": 1,
+      "max_ms": 12.689,
+      "mean_ms": 12.689,
+      "p50_ms": 12.689,
+      "p95_ms": 12.689,
+      "p99_ms": 12.689,
+      "total_ms": 12.689
+    },
+    "seed_cells": {
+      "calls": 1081,
+      "max_ms": 12.62,
+      "mean_ms": 0.0976901017576318,
+      "p50_ms": 0.011,
+      "p95_ms": 0.014,
+      "p99_ms": 3.257,
+      "total_ms": 105.603
+    },
+    "tick": {
+      "calls": 1083,
+      "max_ms": 9.918,
+      "mean_ms": 0.465079409048938,
+      "p50_ms": 0.294,
+      "p95_ms": 0.941,
+      "p99_ms": 1.691,
+      "total_ms": 503.681
+    }
+  },
+  "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+  "samples": 2274,
+  "seeded_cells": 43,
+  "terrain_chunks_built": 50,
+  "terrain_chunks_retained": 24,
+  "tick_cpu_ms": {
+    "max": 9.923,
+    "mean": 0.445412928759894,
+    "p50": 0.299,
+    "p95": 0.945,
+    "p99": 1.405
+  },
+  "timer_refilled_for_timing": true
+}

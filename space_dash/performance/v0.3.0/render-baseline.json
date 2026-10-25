@@ -1,0 +1,102 @@
+{
+  "catchup_frames": 18,
+  "completed_dashes": 26,
+  "draw_calls": {
+    "max": 443.0,
+    "mean": 389.404528301887,
+    "p50": 388.0,
+    "p95": 415.0,
+    "p99": 435.0
+  },
+  "draw_submission_cpu_ms": {
+    "max": 3.651,
+    "mean": 0.904070943396225,
+    "p50": 0.855,
+    "p95": 1.258,
+    "p99": 1.516
+  },
+  "ffmpeg_running": false,
+  "frame_interval_ms": {
+    "max": 174.665,
+    "mean": 11.32712,
+    "p50": 9.445,
+    "p95": 18.102,
+    "p99": 28.041
+  },
+  "nested_model_cpu": {
+    "coverage": {
+      "calls": 1123,
+      "max_ms": 16.427,
+      "mean_ms": 0.949471059661621,
+      "p50_ms": 0.142,
+      "p95_ms": 4.722,
+      "p99_ms": 8.964,
+      "total_ms": 1066.256
+    },
+    "eligible_words": {
+      "calls": 591,
+      "max_ms": 8.496,
+      "mean_ms": 3.79503384094755,
+      "p50_ms": 4.104,
+      "p95_ms": 4.889,
+      "p99_ms": 5.834,
+      "total_ms": 2242.865
+    },
+    "enemies": {
+      "calls": 1082,
+      "max_ms": 4.412,
+      "mean_ms": 0.039539741219963,
+      "p50_ms": 0.034,
+      "p95_ms": 0.049,
+      "p99_ms": 0.126,
+      "total_ms": 42.782
+    },
+    "place_orb": {
+      "calls": 591,
+      "max_ms": 8.534,
+      "mean_ms": 3.94639255499154,
+      "p50_ms": 4.225,
+      "p95_ms": 5.34,
+      "p99_ms": 7.093,
+      "total_ms": 2332.318
+    },
+    "reset": {
+      "calls": 1,
+      "max_ms": 134.366,
+      "mean_ms": 134.366,
+      "p50_ms": 134.366,
+      "p95_ms": 134.366,
+      "p99_ms": 134.366,
+      "total_ms": 134.366
+    },
+    "seed_cells": {
+      "calls": 1083,
+      "max_ms": 166.452,
+      "mean_ms": 1.33324376731302,
+      "p50_ms": 0.01,
+      "p95_ms": 0.014,
+      "p99_ms": 53.997,
+      "total_ms": 1443.903
+    },
+    "tick": {
+      "calls": 1085,
+      "max_ms": 166.782,
+      "mean_ms": 2.32287834101382,
+      "p50_ms": 0.274,
+      "p95_ms": 5.619,
+      "p99_ms": 16.666,
+      "total_ms": 2520.323
+    }
+  },
+  "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+  "samples": 1325,
+  "seeded_cells": 44,
+  "tick_cpu_ms": {
+    "max": 166.788,
+    "mean": 1.77008528301887,
+    "p50": 0.28,
+    "p95": 4.858,
+    "p99": 9.675
+  },
+  "timer_refilled_for_timing": true
+}

@@ -1,0 +1,248 @@
+{
+  "kind": "nested CPU timings; synthetic survival timer refill for sustained load",
+  "scenarios": {
+    "dense_repeat_dash": {
+      "cell_crossing_us": [
+        138,
+        6787,
+        8041,
+        1901,
+        1292,
+        12122,
+        8776,
+        186,
+        642,
+        14181,
+        13148
+      ],
+      "cell_crossings": 11,
+      "completed_dashes": 17,
+      "final_orbs": 158,
+      "initial_orbs": 180,
+      "simulated_ticks": 720,
+      "timings": {
+        "coverage": {
+          "calls": 717,
+          "max_ms": 2.387,
+          "mean_ms": 0.179351464435146,
+          "p50_ms": 0.086,
+          "p95_ms": 0.633,
+          "p99_ms": 1.003,
+          "total_ms": 128.595
+        },
+        "eligible_words": {
+          "calls": 462,
+          "max_ms": 0.947,
+          "mean_ms": 0.304954545454545,
+          "p50_ms": 0.29,
+          "p95_ms": 0.432,
+          "p99_ms": 0.561,
+          "total_ms": 140.889
+        },
+        "enemies": {
+          "calls": 717,
+          "max_ms": 0.174,
+          "mean_ms": 0.0151576011157601,
+          "p50_ms": 0.013,
+          "p95_ms": 0.021,
+          "p99_ms": 0.071,
+          "total_ms": 10.868
+        },
+        "place_orb": {
+          "calls": 462,
+          "max_ms": 1.068,
+          "mean_ms": 0.395709956709957,
+          "p50_ms": 0.386,
+          "p95_ms": 0.569,
+          "p99_ms": 0.736,
+          "total_ms": 182.818
+        },
+        "reset": {
+          "calls": 1,
+          "max_ms": 23.311,
+          "mean_ms": 23.311,
+          "p50_ms": 23.311,
+          "p95_ms": 23.311,
+          "p99_ms": 23.311,
+          "total_ms": 23.311
+        },
+        "seed_cells": {
+          "calls": 718,
+          "max_ms": 23.289,
+          "mean_ms": 0.119856545961003,
+          "p50_ms": 0.001,
+          "p95_ms": 0.002,
+          "p99_ms": 0.135,
+          "total_ms": 86.057
+        },
+        "tick": {
+          "calls": 720,
+          "max_ms": 14.176,
+          "mean_ms": 0.324193055555556,
+          "p50_ms": 0.115,
+          "p95_ms": 0.769,
+          "p99_ms": 1.994,
+          "total_ms": 233.419
+        }
+      }
+    },
+    "repeat_dash": {
+      "cell_crossing_us": [
+        6492,
+        13963,
+        392,
+        3978,
+        8820,
+        1901,
+        7237,
+        11030,
+        1816,
+        1942,
+        8598
+      ],
+      "cell_crossings": 11,
+      "completed_dashes": 20,
+      "final_orbs": 155,
+      "initial_orbs": 90,
+      "simulated_ticks": 720,
+      "timings": {
+        "coverage": {
+          "calls": 717,
+          "max_ms": 2.153,
+          "mean_ms": 0.159426778242678,
+          "p50_ms": 0.085,
+          "p95_ms": 0.502,
+          "p99_ms": 0.956,
+          "total_ms": 114.309
+        },
+        "eligible_words": {
+          "calls": 470,
+          "max_ms": 1.934,
+          "mean_ms": 0.164276595744681,
+          "p50_ms": 0.152,
+          "p95_ms": 0.248,
+          "p99_ms": 0.387,
+          "total_ms": 77.21
+        },
+        "enemies": {
+          "calls": 717,
+          "max_ms": 0.383,
+          "mean_ms": 0.0138786610878661,
+          "p50_ms": 0.012,
+          "p95_ms": 0.017,
+          "p99_ms": 0.069,
+          "total_ms": 9.951
+        },
+        "place_orb": {
+          "calls": 470,
+          "max_ms": 2.054,
+          "mean_ms": 0.251797872340426,
+          "p50_ms": 0.247,
+          "p95_ms": 0.381,
+          "p99_ms": 0.533,
+          "total_ms": 118.345
+        },
+        "reset": {
+          "calls": 1,
+          "max_ms": 12.529,
+          "mean_ms": 12.529,
+          "p50_ms": 12.529,
+          "p95_ms": 12.529,
+          "p99_ms": 12.529,
+          "total_ms": 12.529
+        },
+        "seed_cells": {
+          "calls": 718,
+          "max_ms": 13.826,
+          "mean_ms": 0.101423398328691,
+          "p50_ms": 0.001,
+          "p95_ms": 0.002,
+          "p99_ms": 1.768,
+          "total_ms": 72.822
+        },
+        "tick": {
+          "calls": 720,
+          "max_ms": 13.958,
+          "mean_ms": 0.298463888888889,
+          "p50_ms": 0.113,
+          "p95_ms": 0.636,
+          "p99_ms": 1.898,
+          "total_ms": 214.894
+        }
+      }
+    },
+    "stationary": {
+      "cell_crossing_us": [],
+      "cell_crossings": 0,
+      "completed_dashes": 0,
+      "final_orbs": 99,
+      "initial_orbs": 90,
+      "simulated_ticks": 180,
+      "timings": {
+        "coverage": {
+          "calls": 180,
+          "max_ms": 1.28,
+          "mean_ms": 0.0611888888888889,
+          "p50_ms": 0.047,
+          "p95_ms": 0.077,
+          "p99_ms": 0.26,
+          "total_ms": 11.014
+        },
+        "eligible_words": {
+          "calls": 99,
+          "max_ms": 0.366,
+          "mean_ms": 0.107272727272727,
+          "p50_ms": 0.103,
+          "p95_ms": 0.16,
+          "p99_ms": 0.347,
+          "total_ms": 10.62
+        },
+        "enemies": {
+          "calls": 180,
+          "max_ms": 0.044,
+          "mean_ms": 0.0106111111111111,
+          "p50_ms": 0.01,
+          "p95_ms": 0.012,
+          "p99_ms": 0.032,
+          "total_ms": 1.91
+        },
+        "place_orb": {
+          "calls": 99,
+          "max_ms": 0.412,
+          "mean_ms": 0.142424242424242,
+          "p50_ms": 0.134,
+          "p95_ms": 0.246,
+          "p99_ms": 0.405,
+          "total_ms": 14.1
+        },
+        "reset": {
+          "calls": 1,
+          "max_ms": 12.231,
+          "mean_ms": 12.231,
+          "p50_ms": 12.231,
+          "p95_ms": 12.231,
+          "p99_ms": 12.231,
+          "total_ms": 12.231
+        },
+        "seed_cells": {
+          "calls": 181,
+          "max_ms": 12.179,
+          "mean_ms": 0.0678950276243094,
+          "p50_ms": 0.001,
+          "p95_ms": 0.001,
+          "p99_ms": 0.001,
+          "total_ms": 12.289
+        },
+        "tick": {
+          "calls": 180,
+          "max_ms": 1.362,
+          "mean_ms": 0.0809722222222222,
+          "p50_ms": 0.064,
+          "p95_ms": 0.106,
+          "p99_ms": 0.311,
+          "total_ms": 14.575
+        }
+      }
+    }
+  }
+}

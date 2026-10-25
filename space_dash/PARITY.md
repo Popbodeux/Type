@@ -2,7 +2,15 @@
 
 This separate Godot project reconstructs the user-selected, complete original grass-ground snapshot from a read-only source-inspection report. It is **not** a grass reskin of Chi Circuit. The original GameMaker executable has not been run here, and full behavioral/visual parity is not claimed.
 
-The earlier Chi Circuit project and downloads are preserved. This version is the separate `space_dash/` project and uses versioned v0.2.0 delivery paths.
+The earlier Chi Circuit and v0.2.0 downloads are preserved. This separate `space_dash/` project now uses versioned v0.3.0 paths. Explicit user playtest requests supersede historical behavior where noted below.
+
+## v0.3.0 requested changes
+
+Neutral words highlight only accepted matching prefix characters. Bodies remain faint until typing; matching candidates light together and then only a unique/exact selected body stays lit. Text and body selection feedback are independent. Typo rejection preserves accepted state, Backspace updates it, and dash/reset clears it. No speculative sparks, completion pulses or per-orb glow shaders were added; existing feedback/trails remain.
+
+All enemy kinds now wander when distant, acquire at240world pixels, and disengage beyond340, with hysteresis. Kind2's always-chase behavior is intentionally removed; wanderers face their heading. The historical ranges in the reference table below do not override this requested policy.
+
+Prefix-set eligibility, spatial spacing checks, one coverage pass per active tick, incremental counts and bounded cached terrain replace wasteful work. Word pools, caps/targets, duplicate-entry weighting, rectangular conflicts and spacing remain. Exhausted-word retries are skipped, changing RNG consumption/layout in that case. See PERFORMANCE.md for before/after evidence and limits.
 
 ## Implemented source-derived rules
 
@@ -58,4 +66,4 @@ Run `bash scripts/godot.sh --headless --script res://tests/test_survival.gd` fro
 
 The rendered playback uses actual engine mouse/key events on the normal scene and exported pack, testing mid-dash queued text, Space confirmation, pause/resume top-edge clicking, forced/natural gameover, and R/Enter restart. It records real gameplay, not a concept animation.
 
-The v0.2.0 deliverable is a standalone Windows x86_64 ZIP with official Godot4.6.3 release templates. Export/PE/archive checks and Linux execution of its actual game pack are separate from Windows runtime testing: **the Windows executable has not been run on Windows or Wine**. Human usability, alternate layouts, and long-session/performance checks are unrun. The older downloads are preserved at their original paths.
+The versioned deliverable is a standalone Windows x86_64 ZIP with official Godot4.6.3 release templates. Export/PE/archive checks and Linux execution of its actual game pack are separate from Windows runtime testing: **the Windows executable has not been run on Windows or Wine**. Human usability, alternate layouts, and long-session checks are unrun; representative cloud performance profiles are reported separately. The older downloads are preserved at their original paths.
