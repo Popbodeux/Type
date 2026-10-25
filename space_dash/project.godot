@@ -1,4 +1,4 @@
-; Source-based survival game with v0.4.1 user playtest fixes.
+; Source-based survival game with v0.4.2 user playtest fixes.
 config_version=5
 
 [application]
@@ -6,7 +6,7 @@ config/name="Type Grass Space Dash"
 run/main_scene="res://survival.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/description="Space-to-dash survival with solid ground, lush chunked 3D grass, original sound and calmer proximity combat."
-config/version="0.4.1"
+config/version="0.4.2"
 
 [display]
 window/size/viewport_width=960
@@ -22,4 +22,4 @@ common/physics_ticks_per_second=60
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 textures/canvas_textures/default_texture_filter=0
-environment/defaults/default_clear_color=Color(0.32156863, 0.41960784, 0.2627451, 1)
+environment/defaults/default_clear_color=Color(0.3372549, 0.47058824, 0.25882353, 1)

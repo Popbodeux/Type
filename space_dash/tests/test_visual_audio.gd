@@ -133,12 +133,15 @@ func run() -> void:
 	var grass = game.grass
 	check(grass.camera_3d.projection == Camera3D.PROJECTION_ORTHOGONAL,"real orthographic 3D camera")
 	check(grass.viewport_3d.transparent_bg and grass.viewport_3d.own_world_3d,"separate transparent 3D background")
-	var chunk = grass.chunk_for(Vector2i(16,10))
+	var chunk = grass.chunk_for(Vector2i(32,20))
 	check(chunk is MultiMeshInstance3D and chunk.multimesh.transform_format == MultiMesh.TRANSFORM_3D,"actual chunked MultiMeshInstance3D cards")
 	check(chunk.multimesh.custom_aabb.position.x < 0 and chunk.multimesh.custom_aabb.size.x > grass.CELL,"local chunk bounds include wind and lean")
+	# Actual instance geometry is verified by test_projection.gd under OpenGL.
+	# Dummy rendering can return identity transforms and cannot prove those properties.
 	var shader: String = grass.grass_material.shader.code
 	check(shader.contains("tip * tip") and shader.contains("clamp(1.0 - UV.y, 0.0, 1.0)"),"root weight zero anchors wind to blade roots")
 	check(shader.contains("world_vertex_coords") and shader.contains("NORMAL = vec3(0.0, 1.0, 0.0)"),"world-space shader sets world-up normal directly")
+	check(shader.contains("NORMAL = normalize((VIEW_MATRIX * vec4(0.0, 1.0, 0.0, 0.0)).xyz)"),"fragment normal overrides back-face flips in correct view space")
 	check(shader.contains("ALPHA_SCISSOR_THRESHOLD = 0.5"),"binary alpha cutout rather than soft overlapping transparency")
 	for x in range(52):
 		grass.chunk_for(Vector2i(x,10))

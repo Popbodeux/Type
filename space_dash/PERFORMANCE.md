@@ -1,23 +1,22 @@
-# v0.4.1 solid ground and lush grass performance
+# v0.4.2 short meadow and oblique camera performance
 
-Godot 4.6.3, Linux x86_64, Compatibility renderer, Mesa llvmpipe OpenGL 4.5 software rendering. Same seed, Hard bank, initial 180 orbs, 900 fixed physics ticks, 14 east/west dashes and cell crossings; first 180 ticks warm up. Audio is muted and the timer refilled only for profiling. These are uncapped frame intervals, not native Windows GPU measurements or correctness tests.
+Godot 4.6.3, Linux x86_64, Compatibility renderer, Mesa llvmpipe OpenGL 4.5 software rendering. Each run uses the same seed, Hard bank, initial 180 orbs, 900 fixed physics ticks, 14 east/west dashes and cell crossings. First 180 ticks warm up. Audio is muted and the timer is refilled only for profiling; normal survival/input is verified separately. These are uncapped frame intervals, not native Windows measurements.
 
-| Dense fixed route | Mean ms | p95 ms | p99 ms | Maximum ms | Catch-up frames |
+| Fixed dense route | Mean ms | p95 ms | p99 ms | Maximum ms | Catch-up frames |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| off | 6.50 | 9.38 | 13.17 | 29.21 | 0 |
-| dense512-low | 24.15 | 29.44 | 33.65 | 67.35 | 220 |
-| dense512-high | 36.74 | 45.14 | 49.19 | 71.82 | 320 |
-| dense256-native-low | 21.66 | 26.27 | 30.67 | 39.91 | 167 |
-| low | 17.10 | 21.42 | 25.12 | 35.53 | 32 |
-| high | 32.27 | 38.25 | 44.01 | 83.11 | 330 |
+| off | 7.26 | 10.80 | 14.52 | 25.45 | 0 |
+| initial-low | 27.68 | 34.25 | 36.14 | 45.91 | 286 |
+| initial-high | 38.61 | 47.63 | 53.88 | 68.83 | 306 |
+| low | 21.42 | 25.94 | 29.58 | 38.40 | 160 |
+| high | 36.76 | 44.13 | 48.86 | 55.89 | 318 |
 
-`dense512` is the first dense attempt with 512px batches and the earlier local-space shader. Smaller 256px batches and a documented world-space shader remove unnecessary offscreen instances and per-vertex matrix inversions. This reduced native Low from 24.15 to 21.66ms and High from 36.74 to 32.27ms mean. Final Low further renders only grass at 640×360 and composites into the 960×540 canvas, giving **17.10ms mean / 21.42ms p95**. Actors, text, targeting and world coordinates stay native. High uses more blades and a native 960×540 grass pass, **32.27ms mean / 38.25ms p95**. It is an optional visual setting; it is expensive on this software GPU. Low is default; Off skips the 3D viewport entirely.
+The first short-meadow attempt used three cluster cards per Low cell and separate cloud/wind noise lookups. Final Low uses two cluster cards per cell, each original mask containing seven fine blades, and shares the broad gust/cloud lookup. This cut Low mean 27.68→21.42ms and p95 34.25→25.94ms. High retains four cluster cards per cell; the shader change reduced mean 38.61→36.76ms. Low grass renders at 800×450 to avoid losing fine blades; High is 960×540. Actors/text remain native 960×540 in both. About 98–100 percent of 16px cells are eligible before tiny random gaps; broad bare clearings are removed.
 
-All recorded runs have an identical final model/RNG fingerprint. Density, culling, shader and resolution changes do not alter gameplay. The previous sparse v0.4.0 Low averaged 10.93ms and High 12.72ms; this revision intentionally spends more rendering work for the requested fuller grass. These independent runs have OS/shared-host noise and are not a controlled GPU benchmark. The new solid-ground Off averaged 6.50ms versus the prior tile-ground Off 7.54ms; ground now uses one untextured canvas rectangle, no tile loading, CPU composition or texture cache. Prior raw data and reports remain under performance/v0.4.0/.
+The current 15-degree orthographic camera maps roots from 2D Y to 3D Z/cos(tilt), preserving screen-ground anchors without stretching actual cards. Card height 18×0.90–1.12 is much shorter than the previous 38×0.74–1.42. Mild lean 0.18, smaller height variation, softened ambient/direct lighting, static multiscale green patches and slow coherent wind/cloud tint produce the requested meadow direction. Color noise is evaluated once per clump on chunk creation; there is no per-blade CPU animation. All batches remain real MultiMeshInstance3D, 256px chunks, 48-chunk cache, alpha scissor, no shadows/MSAA/postprocess. Ground is still one untextured flat canvas rectangle; no old pixel tile texture is used.
 
-Clumps sample a 32px grid, vary height/yaw/tint, use five cards on Low and eight on High, and leave small path/clearing gaps. Fixed-view inspection submitted 5,925 cards on Low and 11,192 on High across 24 visible 256px chunks, including offscreen cards in intersecting batches. A 48-chunk LRU bounds travel memory. The alpha-cutout mask is original, shared and generated once. Four-vertex instanced cards, shader wind, disabled shadows/MSAA and modest blade overlap bound draw/overdraw cost; no per-blade script updates or expensive postprocess glow are used. Culling is batch-wide as documented by Godot.
+Every initial/final quality run has an identical final model/RNG fingerprint. Camera/scenery changes do not alter simulation. The previous v0.4.1 Low mean 17.10ms was cheaper but used taller isolated card tufts and a lower 640×360 grass resolution. This revision deliberately trades some scenery cost for finer continuous grass. Reports/raw data for earlier versions remain in performance/v0.4.1/ and v0.4.0/.
 
-This is not hitch-free 60fps certification. Final Low reached 35.53ms and High 83.11ms maximum; performance on the user's Windows hardware remains untested. Camera easing and 30–75ms combat hit-stop remain intentional and separate from rendering. Physics remains 60Hz. No long-session soak or native Windows profiling was run.
+These are individual shared-host software-rendered runs, not controlled hardware benchmarks. Final Low reached 38.40ms maximum; High 55.89ms. High is expensive on this software GPU and is optional. Off skips the 3D pass. There is no claim of hitch-free 60fps, Windows GPU/audio execution or long-session soak. Fixed physics stays 60Hz; original camera easing and combat hit-stop remain separate intentional behavior. Recording with FFmpeg adds load and was not running during these profiles.
 
 Reproduce with a working display:
 
@@ -25,4 +24,4 @@ Reproduce with a working display:
 DISPLAY=:99 LIBGL_ALWAYS_SOFTWARE=1 bash scripts/godot.sh --audio-driver Dummy -- --profile --fixed-dense --grass=low --output=res://artifacts/profile-low.json
 ```
 
-Repeat `off`/`high`. Raw intermediate/final results are in performance/v0.4.1/. Current ground and normal checks are `tests/render_scenery.gd` and `tests/check_ground_pixels.py`. Screenshots stay private and are not committed.
+Repeat off/high. Projection and actual front/back normals are independently verified with `tests/test_projection.gd -- --render`. Raw numeric results are public in performance/v0.4.2/; all screenshots, diagnostics, user references, new recording and character assets stay private.

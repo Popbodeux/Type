@@ -1,0 +1,2 @@
+7d335c30bf898050f49e7103ba461a17e014a5dc45c9bb135219081e729f5f1b  downloads/space-dash-v0.4.2/type-space-dash-v0.4.2-source.zip
+dc4f70ea55235cedfc3c87c1bd47e3701e7ed8bbcbfd9071487b3fd44dc16ab7  downloads/space-dash-v0.4.2/type-space-dash-v0.4.2-windows-x86_64.zip

@@ -5,7 +5,7 @@ import subprocess
 import zipfile
 
 root = Path(__file__).resolve().parent.parent
-VERSION = "0.4.1"
+VERSION = "0.4.2"
 bundle = root / f"artifacts/type-space-dash-v{VERSION}-windows-x86_64"
 bundle.mkdir(parents=True, exist_ok=True)
 subprocess.run([
@@ -44,9 +44,11 @@ cards sway behind the 2D gameplay; Off stops that extra rendering pass.
 
 This reconstructs the selected older GameMaker snapshot from inspected source.
 The old textured ground is replaced by one flat muted-green canvas fill.
-Original tiles remain unchanged in source reference. Denser 3D grass clumps
-vary in height, direction and color. Low renders grass at 640x360 while actors
+Original tiles remain unchanged in source reference. Short dense 3D meadow clusters
+have softer color patches and wind. A 15-degree oblique camera maps ground
+roots to preserve 2D gameplay alignment. Low renders grass at 800x450 while actors
 and labels stay native; High has more blades and native-resolution grass.
+Card width scaling and two-sided upward shading are corrected.
 Actors remain placeholders; sound effects are new original synthesized audio.
 Historical regional duplicate-word behavior is preserved.
 Stable target IDs and bounded restock loops deliberately fix stale-index/hang

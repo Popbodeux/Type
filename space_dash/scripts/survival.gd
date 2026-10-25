@@ -18,7 +18,7 @@ var state = Model.new()
 var camera: Camera2D
 var hud: Node2D
 var font: Font
-const GROUND_COLOR := Color("526b43")
+const GROUND_COLOR := Color("567842")
 const GROUND_TECHNIQUE := "single solid-color CanvasItem rectangle"
 var profiling_enabled := false
 var last_tick_cpu_us := 0

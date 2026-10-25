@@ -1,4 +1,4 @@
-# Type: grass / Space-to-dash survival v0.4.1
+# Type: grass / Space-to-dash survival v0.4.2
 
 A Godot 4.6.3 reconstruction of the selected older GameMaker snapshot, with requested playtest improvements. The ground is a single untextured muted-green canvas rectangle. It uses original procedural 3D grass and synthesized sound effects. The original three ground PNGs remain unchanged as source reference and are not loaded or drawn during gameplay. Actors remain placeholders. This is not a pixel-perfect port or an original-executable parity claim.
 
@@ -10,7 +10,7 @@ Words stay at a fixed 18-pixel size. Matching words gain a dark backplate; only 
 
 **F8** cycles grass Off/Low/High (default Low). **F10** toggles sound. Title, pause and gameover menus offer mute, volume and grass options; settings persist separately from high score. Eight original synthesized sounds use cooldowns, conservative volumes and at most four voices. Ready suppresses the typing sound on completion. Muting drops events, so unmuting cannot replay a backlog.
 
-Denser overlapping clumps use varied height, direction and color with small clearings. The grass consists of actual chunked `MultiMeshInstance3D` alpha-cutout cards rendered by an orthographic `SubViewport` behind the existing 2D gameplay. It is not a 2D sprite substitute. Leaned cards remain visible from the top-down camera; tips bend in coherent world-space wind while roots stay anchored. The shader uses Godot's documented world_vertex_coords mode, sets normals to world up directly, and uses UV height to anchor roots. This avoids per-vertex matrix inversions. Separate 256px chunks have local bounds including wind/lean, with a 48-chunk cache cap. Low renders only the grass viewport at 640×360 before compositing; text and actors stay at native 960×540. High uses more blades and a native-resolution grass viewport. Paths and clearings preserve open ground; labels/actors always composite above grass. Original art and code only; no third-party reference screenshots are distributed. See [performance](PERFORMANCE.md), [validation](VALIDATION.md) and [source parity](PARITY.md).
+Short multi-blade clusters form a continuous meadow with small natural gaps, restrained height variation, broad green color patches and gentle wind. The grass consists of actual chunked `MultiMeshInstance3D` alpha-cutout cards rendered by an orthographic `SubViewport` behind the existing 2D gameplay. It is not a 2D sprite substitute. The orthographic grass camera tilts 15 degrees from straight down. Ground-root positions map 2D Y to 3D Z/cos(tilt), while card geometry keeps its local dimensions. The 2D gameplay and screen-facing text retain their original coordinates. Tips bend in mild world-space wind while roots stay anchored. The shader uses Godot's documented world_vertex_coords mode and UV height to anchor roots. It enforces world-up normals in fragment view space too, correcting double-sided back-face flips. This avoids per-vertex matrix inversions. Separate 256px chunks have local bounds including wind/lean, with a 48-chunk cache cap. Low renders only the grass viewport at 800×450 before compositing; text and actors stay at native 960×540. High uses more blades and a native-resolution grass viewport. Paths and clearings preserve open ground; labels/actors always composite above grass. Original art and code only; no third-party reference screenshots are distributed. See [performance](PERFORMANCE.md), [validation](VALIDATION.md) and [source parity](PARITY.md).
 
 ## Develop and verify
 
@@ -22,6 +22,7 @@ bash scripts/godot.sh --headless --editor --import --quit
 bash scripts/godot.sh --headless --script tests/test_survival.gd
 bash scripts/godot.sh --headless --script tests/test_playtest_fixes.gd
 bash scripts/godot.sh --headless --script tests/test_visual_audio.gd
+DISPLAY=:99 bash scripts/godot.sh --audio-driver Dummy --script tests/test_projection.gd -- --render
 ```
 
 The wrapper keeps caches/config in ignored `.local/`; generated evidence goes in ignored `artifacts/`. No credentials or network are needed to play. Rendered tests require X11/FFmpeg. `tests/render_scenery.gd` captures Off/Low/High and verifies actual upward normals; `tests/record_gameplay.py` records two engine-input playthroughs and captures the game's own audio bus (not a microphone). Original WAVs can be reproduced with `python3 tests/generate_sfx.py`. `python3 scripts/package_windows.py` needs the official 4.6.3 export templates installed in the wrapper's XDG data directory.

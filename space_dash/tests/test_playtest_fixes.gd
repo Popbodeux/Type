@@ -117,7 +117,7 @@ func run() -> void:
 	root.add_child(game)
 	game.set_physics_process(false)
 	check(game.NEUTRAL_WORD != game.TYPED_PREFIX, "typed glyph color is separate from neutral base labels")
-	check(game.GROUND_COLOR == Color("526b43"), "muted green solid ground color")
+	check(game.GROUND_COLOR == Color("567842"), "muted green solid ground color")
 	check(not game.has_method("ground_chunk"), "runtime has no tiled terrain cache or texture generation")
 	game.queue_free()
 	var file := FileAccess.open("res://artifacts/playtest-fixes-results.json", FileAccess.WRITE)

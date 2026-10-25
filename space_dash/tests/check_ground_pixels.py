@@ -8,11 +8,11 @@ import argparse, json, hashlib
 from PIL import Image
 root = Path(__file__).resolve().parent.parent
 parser = argparse.ArgumentParser()
-parser.add_argument('--image', type=Path, default=root/'artifacts/v0.4.1-scenery/off.png')
+parser.add_argument('--image', type=Path, default=root/'artifacts/v0.4.2-scenery/off.png')
 args = parser.parse_args()
 frame = Image.open(args.image).convert('RGB')
 assert frame.size == (960,540)
-expected = (82,107,67)
+expected = (86,120,66)
 samples = matched = 0
 for y in range(110,450,5):
     for x in range(5,955,5):
