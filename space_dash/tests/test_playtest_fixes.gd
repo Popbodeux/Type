@@ -43,7 +43,7 @@ func run() -> void:
 	var amber := orb(s, "amber", Vector2(-180, 0))
 	var beam := orb(s, "beam", Vector2(0, 180))
 	for o in s.orbs:
-		check(style(s, o).prefix_length == 0 and not style(s, o).lit and style(s, o).body_alpha <= 0.1, "empty input: readable neutral word, faint untouched body")
+		check(style(s, o).prefix_length == 0 and not style(s, o).lit and style(s, o).body_alpha == 0.5, "empty input: readable neutral word, visible half-opaque untouched body")
 	type(s, "a")
 	check(style(s, ash).prefix_length == 1 and style(s, amber).prefix_length == 1, "shared prefix highlights only one accepted character on both words")
 	check(style(s, ash).lit and style(s, amber).lit and not style(s, beam).lit, "shared prefix lights matching candidate bodies only")
@@ -77,20 +77,20 @@ func run() -> void:
 		var before: Vector2 = enemy.pos
 		s.update_enemies()
 		check(not enemy.aggro and enemy.pos.x > before.x, "every kind, including kind2, wanders away rather than pursuing from far away")
-		s.player = enemy.pos + Vector2(239, 0)
+		s.player = enemy.pos + Vector2(139, 0)
 		s.update_enemies()
-		check(enemy.aggro, "approaching within240 activates proximity aggro")
-		for distance in [241, 239, 241, 300, 340]:
+		check(enemy.aggro, "approaching within 140 activates proximity aggro")
+		for distance in [141, 139, 141, 165, 190]:
 			s.player = enemy.pos + Vector2(distance, 0)
 			s.update_enemies()
-			check(enemy.aggro, "hysteresis prevents boundary flicker and retains chase through340")
-		s.player = enemy.pos + Vector2(341, 0)
+			check(enemy.aggro, "hysteresis prevents boundary flicker and retains chase through 190")
+		s.player = enemy.pos + Vector2(191, 0)
 		s.update_enemies()
-		check(not enemy.aggro, "leaving340 disengages to wandering")
-		s.player = enemy.pos + Vector2(300, 0)
+		check(not enemy.aggro, "leaving 190 disengages to wandering")
+		s.player = enemy.pos + Vector2(165, 0)
 		s.update_enemies()
-		check(not enemy.aggro, "disengaged enemy does not reacquire at300")
-		s.player = enemy.pos + Vector2(200, 0)
+		check(not enemy.aggro, "disengaged enemy does not reacquire at 165")
+		s.player = enemy.pos + Vector2(100, 0)
 		s.update_enemies()
 		check(enemy.aggro, "player passing nearby can reactivate aggro")
 		s.player += Vector2(2000, 0)
@@ -101,7 +101,7 @@ func run() -> void:
 	for difficulty in 3:
 		s = fixture()
 		s.difficulty = difficulty
-		orb(s, "meadow", Vector2(200, 0))
+		orb(s, "meadow", Vector2(100, 0))
 		orb(s, "sun", Vector2(-200, 0))
 		orb(s, "Ash", Vector2(700, 0))
 		for shift in [Vector2.ZERO, Vector2(400, 0), Vector2(0, 400)]:
@@ -126,6 +126,6 @@ func run() -> void:
 	check(game.ground_chunks.size() <= 24 and game.ground_chunk_order.size() <= 24, "terrain cache is bounded rather than growing with whole-map travel")
 	game.queue_free()
 	var file := FileAccess.open("res://artifacts/playtest-fixes-results.json", FileAccess.WRITE)
-	file.store_string(JSON.stringify({"checks": checks, "passed": checks - failures.size(), "failures": failures, "aggro_enter": 240, "aggro_exit": 340}, "  "))
+	file.store_string(JSON.stringify({"checks": checks, "passed": checks - failures.size(), "failures": failures, "aggro_enter": 140, "aggro_exit": 190}, "  "))
 	print("PLAYTEST FIX CHECKS: %d PASSED: %d FAILED: %d" % [checks, checks - failures.size(), failures.size()])
 	quit(0 if failures.is_empty() else 1)

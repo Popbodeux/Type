@@ -67,3 +67,8 @@ Run `bash scripts/godot.sh --headless --script res://tests/test_survival.gd` fro
 The rendered playback uses actual engine mouse/key events on the normal scene and exported pack, testing mid-dash queued text, Space confirmation, pause/resume top-edge clicking, forced/natural gameover, and R/Enter restart. It records real gameplay, not a concept animation.
 
 The versioned deliverable is a standalone Windows x86_64 ZIP with official Godot4.6.3 release templates. Export/PE/archive checks and Linux execution of its actual game pack are separate from Windows runtime testing: **the Windows executable has not been run on Windows or Wine**. Human usability, alternate layouts, and long-session checks are unrun; representative cloud performance profiles are reported separately. The older downloads are preserved at their original paths.
+
+
+## v0.4.0 requested changes
+
+User playtest feedback supersedes legacy visual/audio/proximity behavior. Fixed 18px labels with matching dark backplates replace the smaller lettering; idle orb alpha is now 0.50 and active alpha 0.98. All kinds acquire within 140px and disengage beyond 190px; pursuit uses 0.65 and wandering 0.70 rate multipliers. These are tunable constants in survival_state.gd, not historical source values. Original source contact/combat/dash/timer rules remain. Original synthesized audio and the chunked 3D grass background are new additions, not restored GameMaker assets. No new character model is integrated in this playtest.

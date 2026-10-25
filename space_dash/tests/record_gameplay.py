@@ -8,6 +8,7 @@ import os
 import argparse
 from pathlib import Path
 import signal
+import time
 import subprocess
 
 root = Path(__file__).resolve().parent.parent
@@ -24,6 +25,7 @@ env = os.environ.copy()
 env.setdefault("LIBGL_ALWAYS_SOFTWARE", "1")
 env["CHI_ARTIFACT_DIR"] = str(artifacts)
 with (artifacts / "recording.log").open("w") as recording, (artifacts / "render.log").open("w") as log:
+    env["TYPE_VIDEO_STARTED_UNIX"] = str(time.time())
     capture = subprocess.Popen([
         "ffmpeg", "-y", "-f", "x11grab", "-video_size", "960x540", "-framerate", "30",
         "-i", env["DISPLAY"], "-an", "-c:v", "libx264", "-preset", "ultrafast",

@@ -1,0 +1,53 @@
+{
+  "audio_muted_for_profile": true,
+  "catchup_frames": 0,
+  "commanded_dashes": 14,
+  "commands": [
+    "(8552.0, 5384.8)",
+    "(8912.0, 5524.8)",
+    "(9272.0, 5384.8)",
+    "(9632.0, 5244.8)",
+    "(9992.0, 5384.8)",
+    "(10352.0, 5524.8)",
+    "(10712.0, 5384.8)",
+    "(11072.0, 5244.8)",
+    "(11072.0, 5384.8)",
+    "(10712.0, 5524.8)",
+    "(10352.0, 5384.8)",
+    "(9992.0, 5244.8)",
+    "(9632.0, 5384.8)",
+    "(9272.0, 5524.8)"
+  ],
+  "draw_calls": {
+    "max": 282.0,
+    "mean": 219.530778894472,
+    "p95": 276.0,
+    "p99": 281.0
+  },
+  "draw_submission_cpu_ms": {
+    "max": 2.212,
+    "mean": 0.952757537688445,
+    "p95": 1.264,
+    "p99": 1.793
+  },
+  "frame_interval_ms": {
+    "max": 21.579,
+    "mean": 7.54178329145729,
+    "p95": 11.042,
+    "p99": 14.368
+  },
+  "grass_cached_chunks": 0,
+  "grass_visible_cards": 0,
+  "model_cpu_ms": {
+    "max": 12.871,
+    "mean": 0.37868404522613,
+    "p95": 1.056,
+    "p99": 1.525
+  },
+  "physics_ticks": 900,
+  "quality": "off",
+  "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+  "samples": 1592,
+  "state_fingerprint": "3ef7419c73fa675649b7527134b7f0a4d3c6ef7ea6a0c72d13f178876ba4b3a7",
+  "synthetic_timer_refill": true
+}

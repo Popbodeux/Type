@@ -5,7 +5,7 @@ import subprocess
 import zipfile
 
 root = Path(__file__).resolve().parent.parent
-VERSION = "0.3.0"
+VERSION = "0.4.0"
 bundle = root / f"artifacts/type-space-dash-v{VERSION}-windows-x86_64"
 bundle.mkdir(parents=True, exist_ok=True)
 subprocess.run([
@@ -31,19 +31,20 @@ wrong letters, blocked hits, and enemy contact remove time.
 Typing while dashing or paused is queued for processing afterward.
 Shift+Q is the original's debug shortcut to force gameover.
 
-PLAYTEST FIXES:
-Words start neutral and only accepted matching prefix letters turn gold.
-Orb bodies start faint. Matching candidates light as you type; a unique or
-complete target alone stays lit. Backspace updates this feedback.
-Every enemy kind wanders outside nearby aggro: acquire at240world pixels,
-disengage beyond340, with hysteresis to prevent flicker. Kind2 no longer
-pursues across the map. Timing and cached terrain/spawn optimizations reduce
-the measured movement hitches; camera easing/combat hit-stop are unchanged.
+PLAYTEST REVISION:
+Matching words use larger fixed-size lettering and a darker backplate. Only
+correctly accepted prefix letters turn gold. Untouched orbs are 50% opaque;
+matching candidates brighten as you type. Backspace updates this feedback.
+Enemies acquire within 140 world pixels, disengage beyond 190, pursue at
+65% and wander at 70% of their former base rates. No global alert chaining.
+Eight original synthesized effects have a four-voice limit and cooldowns.
+F10 toggles sound; Escape opens settings with mute and master volume.
+F8 cycles grass Off/Low/High. Low is the default. Real chunked 3D alpha-cutout
+cards sway behind the 2D gameplay; Off stops that extra rendering pass.
 
 This reconstructs the selected older GameMaker snapshot from inspected source.
 The three original ground tiles are included unchanged, rendered at2x with
-the source tint and hash pattern. Actors are placeholders; original audio is
-not included. Historical regional duplicate-word behavior is preserved.
+the source tint and hash pattern. Actors remain placeholders; sound effects are new original synthesized audio. Historical regional duplicate-word behavior is preserved.
 Stable target IDs and bounded restock loops deliberately fix stale-index/hang
 hazards; gameover statistics freeze and Resume hitbox fixes are also retained.
 

@@ -1,35 +1,29 @@
-# Type — grass / Space-to-dash survival v0.3.0
+# Type: grass / Space-to-dash survival v0.4.0
 
-This is a separate Godot4.6.3 project based on the inspected older GameMaker snapshot selected by the user. It preserves the earlier Chi Circuit project and downloads. It does not use Chi Circuit's invented waves or vulnerable-angle loop.
+A Godot 4.6.3 reconstruction of the selected older GameMaker snapshot, with requested playtest improvements. It uses the original three ground tiles, new original procedural 3D grass and synthesized sound effects. Actors remain placeholders. This is not a pixel-perfect port or an original-executable parity claim.
 
-**[Download the standalone Windows ZIP](https://raw.githubusercontent.com/Popbodeux/Type/main/downloads/space-dash-v0.3.0/type-space-dash-v0.3.0-windows-x86_64.zip).** Extract the whole archive, then double-click `TypeSpaceDash.exe`. Keep `TypeSpaceDash.pck` beside it. No Godot installation is needed to play. Requires Windows x86_64 with OpenGL3.3 support. This unsigned export has **not been run on Windows or Wine**; Linux source/game-pack checks are documented in [VALIDATION.md](VALIDATION.md).
+Download the versioned Windows ZIP from the repository root README, extract the entire folder to your desktop, and double-click `TypeSpaceDash.exe`. Keep `TypeSpaceDash.pck` beside it. No Godot installation is needed. Windows x86_64/OpenGL 3.3 is required. The executable is unsigned and has not been run on Windows or Wine; Linux execution of its actual game pack is checked separately.
 
+Choose a difficulty with the mouse, then NEW GAME. Type an orb's exact case-sensitive word and press **Space** to dash through enemies to it. Backspace edits; Escape pauses/resumes; R or Enter restarts gameover. The timer starts at 30 seconds. Orbs, hits and kills add time; rejected letters, blocked hits and contact remove it. Text entered during dash or pause is queued. Shift+Q forces gameover for debugging.
 
-This playtest implements the requested fixes:
+Words stay at a fixed 18-pixel size. Matching words gain a dark backplate; only accepted prefix letters turn gold. Idle orb bodies are 50% opaque, active candidates 98%; a unique target alone stays lit. All enemies wander until within 140 world pixels, disengage beyond 190, pursue at 65% and wander at 70% of their prior rates. No global alert chaining.
 
-- Word labels start neutral. Only correctly typed matching prefix letters highlight progressively; completing the word highlights all its letters.
-- Orb bodies start very faint. Matching candidates light as you type; a unique or completed target alone stays lit. Backspace updates candidates, a rejected typo retains the accepted prefix, and dash/reset clears activation. These are cheap color/alpha changes, without new glow shaders or speculative effects.
-- Every enemy kind wanders when distant, acquires aggro at **240 world pixels**, and disengages beyond **340 pixels**. The hysteresis band prevents flicker. Kind2 no longer pursues across the map; wandering enemies face their own wandering direction.
-- Spawn/conflict work and terrain rendering are cached and redundant maintenance passes consolidated. Representative normal/dense worst model ticks fell139/368→14/14ms; rendered p95 interval fell18.1→9.1ms. A63.5ms wall-time outlier remained. [PERFORMANCE.md](PERFORMANCE.md) contains full measurements and limitations; Windows GPU performance is not established. Intentional camera easing and combat hit-stop remain.
+**F8** cycles grass Off/Low/High (default Low). **F10** toggles sound. Title, pause and gameover menus offer mute, volume and grass options; settings persist separately from high score. Eight original synthesized sounds use cooldowns, conservative volumes and at most four voices. Ready suppresses the typing sound on completion. Muting drops events, so unmuting cannot replay a backlog.
 
-The three original16×16 grass PNGs are integrated unchanged, with verified hashes/pixels and the source's32px cell hash/tint/sampling. Actors remain placeholders and original audio is absent. See [PARITY.md](PARITY.md) for matched rules and deliberate fixes. Historical regional duplicate-word behavior is retained; the first exact match is highlighted.
+The grass consists of actual chunked `MultiMeshInstance3D` alpha-cutout cards rendered by an orthographic `SubViewport` behind the existing 2D gameplay. It is not a 2D sprite substitute. Leaned cards remain visible from the top-down camera; tips bend in coherent world-space wind while roots stay anchored. World-up shading normals are mapped into local space using the transpose of the model matrix before Godot's normal transform. Chunk-local bounds include wind/lean. Paths and clearings preserve open ground; labels/actors always composite above grass. Original art and code only; no third-party reference screenshots are distributed. See [performance](PERFORMANCE.md), [validation](VALIDATION.md) and [source parity](PARITY.md).
 
-Open this folder's `project.godot` in Godot4.6.3, or run:
+## Develop and verify
+
+Open `project.godot` in Godot **4.6.3 stable**, or:
 
 ```sh
-cd space_dash  # from the repository root
 bash scripts/godot.sh
-```
-
-Choose Easy/Normal/Hard with the mouse and click **NEW GAME**. Type the exact case-sensitive word of an on-screen orb, then press **Space** to dash to it. Passing through enemies attacks them. Orbs and successful combat refill the continuously draining30-second timer. Wrong characters cost0.75seconds and reset combos. Backspace edits. Escape pauses/resumes; R or Enter restarts gameover. Shift+Q is the source's force-gameover shortcut. Exit buttons close the game.
-
-Characters typed during a dash remain queued and process afterward; completing a word never automatically dashes. A Space edge pressed during the suspended dash/hit-stop interval is not replayed. No contact immunity is added during a dash.
-
-```sh
 bash scripts/godot.sh --headless --editor --import --quit
-bash scripts/godot.sh --headless --script res://tests/test_survival.gd
-bash scripts/godot.sh --headless --script res://tests/test_playtest_fixes.gd
-DISPLAY=:99 python3 tests/record_gameplay.py  # needs Xvfb/X11 display and FFmpeg
+bash scripts/godot.sh --headless --script tests/test_survival.gd
+bash scripts/godot.sh --headless --script tests/test_playtest_fixes.gd
+bash scripts/godot.sh --headless --script tests/test_visual_audio.gd
 ```
 
-Physics is fixed at60Hz for the original's frame-based speed and0.085camera lerp. High score persists to the Godot user-data directory as `typergame_save.ini`. Test fixtures use separate ignored save files. `python3 scripts/package_windows.py` creates the versioned Windows ZIP when official4.6.3 Windows export templates are installed. Bounded restock loops, stable target IDs, frozen gameover stats, and the Resume hitbox fix are deliberate robustness changes.
+The wrapper keeps caches/config in ignored `.local/`; generated evidence goes in ignored `artifacts/`. No credentials or network are needed to play. Rendered tests require X11/FFmpeg. `tests/render_scenery.gd` captures Off/Low/High and verifies actual upward normals; `tests/record_gameplay.py` records two engine-input playthroughs and captures the game's own audio bus (not a microphone). Original WAVs can be reproduced with `python3 tests/generate_sfx.py`. `python3 scripts/package_windows.py` needs the official 4.6.3 export templates installed in the wrapper's XDG data directory.
+
+Official implementation references: [spatial shader coordinates](https://docs.godotengine.org/en/4.6/tutorials/shaders/shader_reference/spatial_shader.html), [MultiMesh batch culling](https://docs.godotengine.org/en/4.6/tutorials/performance/using_multimesh.html), [orthographic camera](https://docs.godotengine.org/en/4.6/classes/class_camera3d.html).

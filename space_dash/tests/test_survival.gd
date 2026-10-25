@@ -278,27 +278,27 @@ func run() -> void:
 	near(s.timer, before_contact - 11.0 / 60.0, "overlapping kinds0/1/2 add3+3+5 seconds per second even during dash")
 	check(s.combo == 0, "contact resets combat combo without cooldown")
 	s = fixture()
-	s.enemies.append(s.make_enemy(0, s.player - Vector2(200, 0)))
+	s.enemies.append(s.make_enemy(0, s.player - Vector2(100, 0)))
 	var start: Vector2 = s.enemies[0].pos
 	for ignored in 60:
 		s.update_enemies()
-	near(s.enemies[0].pos.x - start.x, 39.6, "kind0 chases .55*1.2 per60Hz frame", 0.04)
+	near(s.enemies[0].pos.x - start.x, 25.74, "kind0 chases .55*1.2*.65 per 60 Hz frame", 0.04)
 	s = fixture()
-	s.enemies.append(s.make_enemy(1, s.player - Vector2(200, 0)))
+	s.enemies.append(s.make_enemy(1, s.player - Vector2(100, 0)))
 	start = s.enemies[0].pos
 	s.update_enemies()
-	near(s.enemies[0].pos.x - start.x, 0.36 * 0.95, "kind1 chase multiplier .95", 0.001)
+	near(s.enemies[0].pos.x - start.x, 0.36 * 0.95 * 0.65, "kind1 chase multiplier .95 and calm pursuit .65", 0.001)
 	s = fixture()
-	s.enemies.append(s.make_enemy(2, s.player - Vector2(0, 200)))
+	s.enemies.append(s.make_enemy(2, s.player - Vector2(0, 100)))
 	start = s.enemies[0].pos
 	s.update_enemies()
-	near(s.enemies[0].pos.y - start.y, 0.9 * 0.72, "chase Y multiplier .72", 0.001)
+	near(s.enemies[0].pos.y - start.y, 0.9 * 0.72 * 0.65, "chase Y multiplier .72 and calm pursuit .65", 0.001)
 	s = fixture()
 	s.enemies.append(s.make_enemy(0, s.player - Vector2(600, 0)))
 	s.enemies[0].heading = 0.0
 	start = s.enemies[0].pos
 	s.update_enemies()
-	check(s.enemies[0].pos.x - start.x > 0.54 and s.enemies[0].pos.x - start.x <= 0.551, "kind0 outside chase range wanders at base speed")
+	check(s.enemies[0].pos.x - start.x > 0.384 and s.enemies[0].pos.x - start.x <= 0.386, "kind0 outside chase range wanders at 70% base speed")
 	check(absf(s.enemies[0].heading) <= deg_to_rad(3), "wander heading jitter bounded to3 degrees per frame")
 	s = fixture()
 	s.enemy_updates_enabled = true

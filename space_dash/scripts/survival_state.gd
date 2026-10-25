@@ -59,8 +59,20 @@ var spacing_grid: Dictionary = {}
 var spacing_grid_revision := -1
 var spacing_grid_size := -1
 const SPACING_CELL := 104.0
-const AGGRO_ENTER := 240.0
-const AGGRO_EXIT := 340.0
+const AGGRO_ENTER := 140.0
+const AGGRO_EXIT := 190.0
+const PURSUIT_SCALE := 0.65
+const WANDER_SCALE := 0.7
+var audio_events: Array[String] = []
+
+func emit_audio(name: String) -> void:
+	if not audio_events.has(name):
+		audio_events.append(name)
+
+func drain_audio_events() -> Array[String]:
+	var result := audio_events.duplicate()
+	audio_events.clear()
+	return result
 
 func _init(seed_value: int = 0) -> void:
 	if seed_value == 0:
@@ -107,7 +119,7 @@ func typing_feedback() -> Dictionary:
 func orb_feedback(orb: Dictionary, feedback: Dictionary) -> Dictionary:
 	var matches_prefix: bool = feedback.candidates.has(orb.id)
 	var lit: bool = matches_prefix and (feedback.selected_id < 0 or feedback.selected_id == orb.id)
-	return {"prefix_length": buffer.length() if matches_prefix else 0, "lit": lit, "body_alpha": 0.95 if lit else 0.08}
+	return {"prefix_length": buffer.length() if matches_prefix else 0, "lit": lit, "matching": matches_prefix, "body_alpha": 0.98 if lit else 0.50}
 
 func recompute_target(prefer_exact: bool = false) -> void:
 	var previous := active_id
@@ -156,8 +168,13 @@ func accept_character(character: String) -> bool:
 		correct_keys += 1
 		buffer += character
 		recompute_target(true)
+		emit_audio("typing")
+		var selected := find_orb(active_id)
+		if not selected.is_empty() and selected.word == buffer:
+			emit_audio("ready")
 		return true
 	incorrect_keys += 1
+	emit_audio("mistake")
 	timer -= R.MISTYPE_PENALTY
 	combo = 0
 	word_streak = 0
@@ -195,6 +212,7 @@ func confirm_word() -> bool:
 	dash_from = player
 	dash_to = orb.pos
 	dash_orb_id = orb.id
+	emit_audio("dash")
 	trails.append({"from": player, "to": dash_to, "life": 0.3})
 	resolve_dash_damage()
 	buffer = ""
@@ -211,6 +229,7 @@ func resolve_dash_damage() -> void:
 		if R.segment_distance(enemy.pos, dash_from, dash_to) > float(enemy.radius) + R.PLAYER_RADIUS * 0.55:
 			continue
 		if enemy.kind == 1 and not R.directional_hit(direction, enemy.facing):
+			emit_audio("block")
 			timer -= 1.1
 			combo = 0
 			hit_stop = maxf(hit_stop, 0.03)
@@ -219,6 +238,7 @@ func resolve_dash_damage() -> void:
 			notice_left = 0.6
 			continue
 		enemy.hp -= 1
+		emit_audio("hit")
 		combo += 1
 		add_time(0.65)
 		enemy.pos += Vector2(cos(direction) * 18.0, sin(direction) * 12.0)
@@ -245,6 +265,7 @@ func step_dash() -> void:
 		dash_active = false
 		var orb := find_orb(dash_orb_id)
 		if not orb.is_empty():
+			emit_audio("collect")
 			add_time(orb.reward)
 			orbs.erase(orb)
 			orb_revision += 1
@@ -314,6 +335,7 @@ func tick() -> void:
 
 func reset_run() -> void:
 	phase = "playing"
+	audio_events.clear()
 	player = R.ARENA_CENTER + Vector2(0, 60)
 	timer = R.TIMER_MAX
 	elapsed = 0.0
@@ -360,6 +382,7 @@ func end_run() -> void:
 	if phase == "gameover":
 		return
 	phase = "gameover"
+	emit_audio("gameover")
 	timer = maxf(0, timer)
 	queued_text = ""
 	space_pressed = false
@@ -401,12 +424,14 @@ func update_enemies() -> void:
 		enemy.aggro = chase
 		var direction: float = offset.angle()
 		if chase:
+			speed *= PURSUIT_SCALE
 			if enemy.kind == 0:
 				speed *= 1.2
 			elif enemy.kind == 1:
 				speed *= 0.95
 			enemy.pos += Vector2(cos(direction) * speed, sin(direction) * speed * 0.72)
 		else:
+			speed *= WANDER_SCALE
 			enemy.heading += deg_to_rad(rng.randf_range(-3, 3))
 			direction = enemy.heading
 			enemy.pos += Vector2(cos(direction) * speed, sin(direction) * speed * 0.55)

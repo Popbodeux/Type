@@ -26,9 +26,16 @@ var captured: Dictionary = {}
 var capture_metadata: Dictionary = {}
 var finished := false
 var actions: Array[Dictionary] = []
+var audio_started_unix := 0.0
 
 func _ready() -> void:
 	game.state.save_path = output_path("render-test-save.ini")
+	game.settings_path = output_path("render-test-settings.ini")
+	game.set_grass_quality(1, false)
+	game.set_audio_muted(false, false)
+	game.set_audio_volume(0.6, false)
+	audio_started_unix = Time.get_unix_time_from_system()
+	game.sound.start_capture()
 	game.state.rng.seed = 1764
 
 func key(code: Key, unicode: int = 0, shift: bool = false) -> void:
@@ -81,6 +88,7 @@ func screenshot(name: String) -> void:
 	await get_tree().process_frame
 	game.queue_redraw()
 	game.hud.queue_redraw()
+	game.entities.queue_redraw()
 	await RenderingServer.frame_post_draw
 	get_viewport().get_texture().get_image().save_png(output_path(name + ".png"))
 	capture_metadata[name] = {"camera": [game.camera.position.x, game.camera.position.y], "phase": game.state.phase, "timer": game.state.timer, "prefix": game.state.buffer, "candidates": game.state.typing_feedback().candidates.size(), "selected_id": game.state.typing_feedback().selected_id}
@@ -253,7 +261,8 @@ func finish() -> void:
 	for required in ["06-shared-prefix", "07-unique-prefix", "08-completed-word"]:
 		if not captured.has(required):
 			failures.append("missing progressive feedback capture:" + required)
+	var audio_bytes: int = game.sound.finish_capture(output_path("gameplay-audio.wav"))
 	var file := FileAccess.open(output_path("render-playtest.json"), FileAccess.WRITE)
-	file.store_string(JSON.stringify({"passed": failures.is_empty(), "failures": failures, "runs": run_number, "mid_dash_queue_observed": queue_observed, "space_required": saw_space_required, "resume_top_edge_verified": resume_top_clicked, "grass_tiles_loaded": game.tiles.size(), "tile_verification": game.tile_verification, "captures": capture_metadata, "assets_status": game.assets_status, "seconds": clock, "actions": actions}, "  "))
+	file.store_string(JSON.stringify({"audio_started_unix": audio_started_unix, "video_started_unix": float(OS.get_environment("TYPE_VIDEO_STARTED_UNIX")), "audio_bytes": audio_bytes, "audio_events": game.sound.played_log, "grass_technique": "chunked MultiMeshInstance3D alpha-cutout cards in orthographic SubViewport", "passed": failures.is_empty(), "failures": failures, "runs": run_number, "mid_dash_queue_observed": queue_observed, "space_required": saw_space_required, "resume_top_edge_verified": resume_top_clicked, "grass_tiles_loaded": game.tiles.size(), "tile_verification": game.tile_verification, "captures": capture_metadata, "assets_status": game.assets_status, "seconds": clock, "actions": actions}, "  "))
 	print("SURVIVAL RENDER: ", "PASS" if failures.is_empty() else "FAIL", " ", failures)
 	get_tree().quit(0 if failures.is_empty() else 1)
