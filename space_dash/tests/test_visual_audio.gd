@@ -149,6 +149,10 @@ func run() -> void:
 	check(grass.chunks.size() <= 24,"3D chunk cache bounded across world travel")
 	game.set_grass_quality(0,false)
 	check(grass.chunks.is_empty() and grass.viewport_3d.render_target_update_mode == SubViewport.UPDATE_DISABLED,"grass Off frees chunks and stops 3D rendering")
+	sound.set_muted(true)
+	# Headless process frames can elapse faster than one audio mix block.
+	# Let the audio thread acknowledge stopped/replaced voices before teardown.
+	await create_timer(1.0).timeout
 	chunk = null
 	grass = null
 	sound = null
