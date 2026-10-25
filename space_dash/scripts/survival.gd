@@ -14,26 +14,17 @@ var last_ground_cpu_us := 0
 const WORD_SIZE := 18
 const TILE_NAMES := ["env_grass_plain_00.png", "env_grass_plain_01.png", "env_grass_plain_04.png"]
 const TILE_HASHES := ["d317fd92267a6d5fde8e135034caf3471e5532a292f44edae678af441bf0a941", "205f875be0ff4cc4b939a2c2fcf08f50537a384b9faa6ff93cfaff39c70e6982", "cef5788e5d35ec1c7895f9567a95993b6d89b6ec19f759a1ff7679a32b77a2ee"]
-const PIXEL_HASHES := ["8067d1ac4fedf542afce357b4222b61440ceee46435b4805b2a02bbb031ec640", "2cb39403921dad43781fca0bc48514d88d5b960ce24863459fc24eef407619c6", "4dc1d1ca9d0610fb9693144afc90822c24d4f903c28887f990f28462c6dd072a"]
-var tile_verification: Array[Dictionary] = []
 var state = Model.new()
 var camera: Camera2D
 var hud: Node2D
 var font: Font
-var tiles: Array[Texture2D] = []
-var assets_status := "ORIGINAL GRASS ASSETS PENDING — SOURCE CHECKERBOARD FALLBACK"
+const GROUND_COLOR := Color("526b43")
+const GROUND_TECHNIQUE := "single solid-color CanvasItem rectangle"
 var profiling_enabled := false
 var last_tick_cpu_us := 0
 var last_draw_cpu_us := 0
 var physics_since_frame := 0
-var ground_chunks: Dictionary = {}
-var ground_chunk_order: Array[Vector2i] = []
-var scaled_tiles: Array[Image] = []
-var terrain_build_count := 0
 var label_widths: Dictionary = {}
-const CHUNK_TILES := 16
-const CHUNK_SIZE := 512
-const CHUNK_CACHE_LIMIT := 24
 const NEUTRAL_WORD := Color("e0e5d5")
 const TYPED_PREFIX := Color("fff29b")
 
@@ -44,7 +35,6 @@ func _ready() -> void:
 	font = ThemeDB.fallback_font
 	prepare_plates()
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	load_tiles()
 	state.load_high_score()
 	camera = Camera2D.new()
 	camera.position = state.camera_pos
@@ -79,52 +69,6 @@ func _ready() -> void:
 		driver.set_script(load("res://tests/render_playtest.gd"))
 		driver.game = self
 		add_child(driver)
-
-func load_tiles() -> void:
-	tiles.clear()
-	tile_verification.clear()
-	scaled_tiles.clear()
-	ground_chunks.clear()
-	ground_chunk_order.clear()
-	for i in TILE_NAMES.size():
-		var path: String = "res://assets/env_tiles/" + TILE_NAMES[i]
-		var image: Image
-		var file_verified := false
-		if FileAccess.file_exists(path):
-			if FileAccess.get_sha256(path) != TILE_HASHES[i]:
-				assets_status = "GRASS ASSET HASH MISMATCH — FALLBACK"
-				return
-			file_verified = true
-			image = Image.new()
-			if image.load_png_from_buffer(FileAccess.get_file_as_bytes(path)) != OK:
-				assets_status = "GRASS PNG DECODE FAILED — FALLBACK"
-				return
-		elif ResourceLoader.exists(path):
-			# Godot exports may remap PNGs to imported textures; verify decoded pixels.
-			var texture := load(path) as Texture2D
-			if texture:
-				image = texture.get_image()
-		else:
-			return
-		if image == null or image.get_size() != Vector2i(16, 16):
-			assets_status = "GRASS ASSET DIMENSIONS INVALID — FALLBACK"
-			return
-		image.convert(Image.FORMAT_RGBA8)
-		var hashing := HashingContext.new()
-		hashing.start(HashingContext.HASH_SHA256)
-		hashing.update(image.get_data())
-		var pixel_hash := hashing.finish().hex_encode()
-		if pixel_hash != PIXEL_HASHES[i]:
-			assets_status = "GRASS PIXEL HASH MISMATCH — FALLBACK"
-			return
-		tiles.append(ImageTexture.create_from_image(image))
-		tile_verification.append({"name": TILE_NAMES[i], "original_file_sha256": TILE_HASHES[i], "file_bytes_verified": file_verified, "pixel_sha256": pixel_hash, "width": 16, "height": 16, "verified": true})
-	if tiles.size() == 3:
-		assets_status = "ORIGINAL GRASS TILES VERIFIED / ACTOR ART PLACEHOLDERS"
-		for tile in tiles:
-			var scaled := tile.get_image()
-			scaled.resize(32, 32, Image.INTERPOLATE_NEAREST)
-			scaled_tiles.append(scaled)
 
 func _physics_process(_delta: float) -> void:
 	var started := Time.get_ticks_usec() if profiling_enabled else 0
@@ -220,36 +164,9 @@ func text_width(value: String, size: int) -> float:
 		label_widths[key] = font.get_string_size(value, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
 	return label_widths[key]
 
-func ground_chunk(key: Vector2i) -> Texture2D:
-	if ground_chunks.has(key):
-		ground_chunk_order.erase(key)
-		ground_chunk_order.append(key)
-		return ground_chunks[key]
-	var image := Image.create(CHUNK_SIZE, CHUNK_SIZE, false, Image.FORMAT_RGBA8)
-	for y in CHUNK_TILES:
-		for x in CHUNK_TILES:
-			var cell := key * CHUNK_TILES + Vector2i(x, y)
-			image.blit_rect(scaled_tiles[R.tile_index(cell)], Rect2i(0, 0, 32, 32), Vector2i(x * 32, y * 32))
-	var texture := ImageTexture.create_from_image(image)
-	if ground_chunk_order.size() >= CHUNK_CACHE_LIMIT:
-		ground_chunks.erase(ground_chunk_order.pop_front())
-	ground_chunks[key] = texture
-	ground_chunk_order.append(key)
-	terrain_build_count += 1
-	return texture
-
 func draw_ground(view: Rect2) -> void:
-	if scaled_tiles.size() == 3:
-		# Cache exact source pixels per512px chunk; tint once at draw, preserving NN.
-		var area := view.grow(32)
-		for y in range(floori(area.position.y / CHUNK_SIZE), ceili(area.end.y / CHUNK_SIZE)):
-			for x in range(floori(area.position.x / CHUNK_SIZE), ceili(area.end.x / CHUNK_SIZE)):
-				var key := Vector2i(x, y)
-				draw_texture(ground_chunk(key), Vector2(key) * CHUNK_SIZE, Color8(178, 236, 136))
-	else:
-		for y in range(floori(view.position.y / 32) - 1, ceili(view.end.y / 32) + 1):
-			for x in range(floori(view.position.x / 32) - 1, ceili(view.end.x / 32) + 1):
-				draw_rect(Rect2(x * 32, y * 32, 32, 32), Color8(78, 152, 88) if (x + y) % 2 == 0 else Color8(98, 176, 102))
+	# One untextured canvas primitive; no tile sampling, upload or chunk cache.
+	draw_rect(view.grow(32), GROUND_COLOR)
 
 func _draw() -> void:
 	if font == null:

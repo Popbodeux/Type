@@ -256,13 +256,13 @@ func finish() -> void:
 		failures.append("mid-dash queued text not observed")
 	if not resume_top_clicked:
 		failures.append("top edge of shared resume hitbox failed")
-	if game.tiles.size() != 3:
-		failures.append("original grass tiles did not load")
+	if game.GROUND_TECHNIQUE != "single solid-color CanvasItem rectangle":
+		failures.append("solid ground technique not selected")
 	for required in ["06-shared-prefix", "07-unique-prefix", "08-completed-word"]:
 		if not captured.has(required):
 			failures.append("missing progressive feedback capture:" + required)
 	var audio_bytes: int = game.sound.finish_capture(output_path("gameplay-audio.wav"))
 	var file := FileAccess.open(output_path("render-playtest.json"), FileAccess.WRITE)
-	file.store_string(JSON.stringify({"audio_started_unix": audio_started_unix, "video_started_unix": float(OS.get_environment("TYPE_VIDEO_STARTED_UNIX")), "audio_bytes": audio_bytes, "audio_events": game.sound.played_log, "grass_technique": "chunked MultiMeshInstance3D alpha-cutout cards in orthographic SubViewport", "passed": failures.is_empty(), "failures": failures, "runs": run_number, "mid_dash_queue_observed": queue_observed, "space_required": saw_space_required, "resume_top_edge_verified": resume_top_clicked, "grass_tiles_loaded": game.tiles.size(), "tile_verification": game.tile_verification, "captures": capture_metadata, "assets_status": game.assets_status, "seconds": clock, "actions": actions}, "  "))
+	file.store_string(JSON.stringify({"audio_started_unix": audio_started_unix, "video_started_unix": float(OS.get_environment("TYPE_VIDEO_STARTED_UNIX")), "audio_bytes": audio_bytes, "audio_events": game.sound.played_log, "grass_technique": "chunked MultiMeshInstance3D alpha-cutout cards in orthographic SubViewport", "passed": failures.is_empty(), "failures": failures, "runs": run_number, "mid_dash_queue_observed": queue_observed, "space_required": saw_space_required, "resume_top_edge_verified": resume_top_clicked, "ground_technique": game.GROUND_TECHNIQUE, "ground_color": game.GROUND_COLOR.to_html(false), "captures": capture_metadata, "seconds": clock, "actions": actions}, "  "))
 	print("SURVIVAL RENDER: ", "PASS" if failures.is_empty() else "FAIL", " ", failures)
 	get_tree().quit(0 if failures.is_empty() else 1)

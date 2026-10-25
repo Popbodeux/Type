@@ -10,7 +10,7 @@ var calls: Array[float] = []
 var catchup := 0
 var route: Array[Vector2] = []
 var commanded: Array[Vector2] = []
-var output := "res://artifacts/performance/v0.4.0/fixed.json"
+var output := "res://artifacts/performance/v0.4.1/fixed.json"
 var quality := "off"
 var finished := false
 var started_us := 0
@@ -29,7 +29,7 @@ func _ready() -> void:
 	s.rng.seed = 1764
 	s.difficulty = 2
 	s.reset_run()
-	s.save_path = "res://artifacts/performance/v0.4.0/unused-save.ini"
+	s.save_path = "res://artifacts/performance/v0.4.1/unused-save.ini"
 	for ignored in 300:
 		if s.orbs.size() >= 180:
 			break
@@ -93,6 +93,7 @@ func finish() -> void:
 	if game.get("grass") != null:
 		result["grass_visible_cards"] = game.grass.visible_instances
 		result["grass_cached_chunks"] = game.grass.chunks.size()
+		result["grass_viewport_resolution"] = [game.grass.viewport_3d.size.x, game.grass.viewport_3d.size.y]
 	var file := FileAccess.open(output, FileAccess.WRITE)
 	file.store_string(JSON.stringify(result, "  "))
 	print("FIXED DENSE PROFILE ", quality, " ", result.frame_interval_ms, " fingerprint=", result.state_fingerprint)

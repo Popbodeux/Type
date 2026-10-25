@@ -72,3 +72,10 @@ The versioned deliverable is a standalone Windows x86_64 ZIP with official Godot
 ## v0.4.0 requested changes
 
 User playtest feedback supersedes legacy visual/audio/proximity behavior. Fixed 18px labels with matching dark backplates replace the smaller lettering; idle orb alpha is now 0.50 and active alpha 0.98. All kinds acquire within 140px and disengage beyond 190px; pursuit uses 0.65 and wandering 0.70 rate multipliers. These are tunable constants in survival_state.gd, not historical source values. Original source contact/combat/dash/timer rules remain. Original synthesized audio and the chunked 3D grass background are new additions, not restored GameMaker assets. No new character model is integrated in this playtest.
+
+
+## v0.4.1 ground and density change
+
+The requested replacement ground is a single untextured CanvasItem rectangle, RGB(82,107,67), drawn before the transparent orthographic 3D grass viewport. Original tile PNGs and historical terrain hash helpers remain as source reference, but tile loading, CPU tile composition and the texture chunk cache have been removed from gameplay. There is no checkerboard fallback. Actual MultiMeshInstance3D cards, alpha scissor, world-up shading, root-anchored wind and chunk culling remain. Clumps now use a 32px scatter grid with varied scale/direction/color, smaller clearings, five cards per eligible Low clump and eight on High. Separate batches are now 256px, with a bounded 48-chunk cache. The shader uses documented world-space vertex/normal coordinates directly and UV tip weights; no local-to-world inverse is needed. This intentionally supersedes historical ground appearance; dash/combat/typing/audio/AI rules are unchanged from v0.4.0.
+
+Low composites a 640×360 grass viewport into the native 960×540 canvas; High renders grass at native resolution. This affects only scenery, not world coordinates, actor/text resolution or simulation.

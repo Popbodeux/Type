@@ -1,0 +1,57 @@
+{
+  "audio_muted_for_profile": true,
+  "catchup_frames": 32,
+  "commanded_dashes": 14,
+  "commands": [
+    "(8552.0, 5384.8)",
+    "(8912.0, 5524.8)",
+    "(9272.0, 5384.8)",
+    "(9632.0, 5244.8)",
+    "(9992.0, 5384.8)",
+    "(10352.0, 5524.8)",
+    "(10712.0, 5384.8)",
+    "(11072.0, 5244.8)",
+    "(11072.0, 5384.8)",
+    "(10712.0, 5524.8)",
+    "(10352.0, 5384.8)",
+    "(9992.0, 5244.8)",
+    "(9632.0, 5384.8)",
+    "(9272.0, 5524.8)"
+  ],
+  "draw_calls": {
+    "max": 299.0,
+    "mean": 234.945868945869,
+    "p95": 289.0,
+    "p99": 295.0
+  },
+  "draw_submission_cpu_ms": {
+    "max": 3.044,
+    "mean": 0.99669943019943,
+    "p95": 1.298,
+    "p99": 2.137
+  },
+  "frame_interval_ms": {
+    "max": 35.531,
+    "mean": 17.0978618233618,
+    "p95": 21.416,
+    "p99": 25.125
+  },
+  "grass_cached_chunks": 48,
+  "grass_viewport_resolution": [
+    640,
+    360
+  ],
+  "grass_visible_cards": 3550,
+  "model_cpu_ms": {
+    "max": 13.923,
+    "mean": 0.347408831908832,
+    "p95": 0.972,
+    "p99": 1.466
+  },
+  "physics_ticks": 900,
+  "quality": "low",
+  "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+  "samples": 702,
+  "state_fingerprint": "3ef7419c73fa675649b7527134b7f0a4d3c6ef7ea6a0c72d13f178876ba4b3a7",
+  "synthetic_timer_refill": true
+}

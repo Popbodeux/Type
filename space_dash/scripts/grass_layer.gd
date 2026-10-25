@@ -1,7 +1,7 @@
 extends Node2D
 ## Real 3D cards composited behind the existing 2D entities and HUD.
-const CELL := 512
-const MAX_CHUNKS := 24
+const CELL := 256
+const MAX_CHUNKS := 48
 var game
 var quality := 1
 var texture: Texture2D
@@ -21,7 +21,7 @@ static func hash_cell(x: int, y: int, salt: int = 0) -> int:
 
 static func is_open(pos: Vector2) -> bool:
 	var path_y := 5324.8 + sin((pos.x - 8192.0) / 600.0) * 100.0
-	return absf(pos.y - path_y) < 58 or sin(pos.x * 0.007) + cos(pos.y * 0.006) > 1.1
+	return absf(pos.y - path_y) < 16 or sin(pos.x * 0.007) + cos(pos.y * 0.006) > 1.88
 
 func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -94,6 +94,8 @@ func set_quality(value: int) -> void:
 	last_keys.clear()
 	visible_instances = 0
 	if viewport_3d:
+		# Low renders grass alone at 2/3 resolution; labels/actors stay native 960x540.
+		viewport_3d.size = Vector2i(640,360) if quality == 1 else Vector2i(960,540)
 		viewport_3d.render_target_update_mode = SubViewport.UPDATE_DISABLED if quality == 0 else SubViewport.UPDATE_ALWAYS
 	queue_redraw()
 
@@ -109,19 +111,19 @@ func chunk_for(key: Vector2i) -> MultiMeshInstance3D:
 			var gx := key.x * 8 + x
 			var gy := key.y * 8 + y
 			var h := hash_cell(gx,gy)
-			if h % 100 > (42 if quality == 1 else 68):
+			if h % 100 > (79 if quality == 1 else 94):
 				continue
-			var pos := Vector2(gx*64+16+h%37,gy*64+12+(h/41)%41)
+			var pos := Vector2(gx*32+4+h%25,gy*32+4+(h/41)%25)
 			if is_open(pos):
 				continue
-			for blade in (3 if quality == 1 else 6):
+			for blade in (5 if quality == 1 else 8):
 				var seed := hash_cell(gx,gy,blade+1)
-				var angle := (seed%101/100.0-0.5)*0.9
-				var scale_value := 0.8+(seed%53)/100.0
-				var basis := Basis(Vector3.UP,angle).scaled(Vector3(12*scale_value,27*scale_value,27*scale_value))
-				var origin := Vector3(pos.x-key.x*CELL+blade*3-4,0,pos.y-key.y*CELL+(seed%7)-3)
+				var angle := seed%628 / 100.0
+				var scale_value := 0.74+(seed%69)/100.0
+				var basis := Basis(Vector3.UP,angle).scaled(Vector3(17*scale_value,38*scale_value,38*scale_value))
+				var origin := Vector3(pos.x-key.x*CELL+(seed%19)-9,0,pos.y-key.y*CELL+((seed/19)%19)-9)
 				transforms.append(Transform3D(basis,origin))
-				var tint := 0.9+(seed%11)/100.0
+				var tint := 0.76+(seed%29)/100.0
 				colors.append(Color(tint,tint,tint*0.96,1))
 	var mesh := MultiMesh.new()
 	mesh.transform_format = MultiMesh.TRANSFORM_3D
@@ -129,7 +131,7 @@ func chunk_for(key: Vector2i) -> MultiMeshInstance3D:
 	mesh.mesh = card_mesh
 	mesh.instance_count = transforms.size()
 	# Bounds are local to this chunk, including maximum lean and shader displacement.
-	mesh.custom_aabb = AABB(Vector3(-48,-1,-64),Vector3(CELL+112,64,CELL+112))
+	mesh.custom_aabb = AABB(Vector3(-72,-1,-72),Vector3(CELL+144,72,CELL+144))
 	for i in transforms.size():
 		mesh.set_instance_transform(i,transforms[i])
 		mesh.set_instance_color(i,colors[i])

@@ -135,18 +135,14 @@ func run() -> void:
 	check(grass.viewport_3d.transparent_bg and grass.viewport_3d.own_world_3d,"separate transparent 3D background")
 	var chunk = grass.chunk_for(Vector2i(16,10))
 	check(chunk is MultiMeshInstance3D and chunk.multimesh.transform_format == MultiMesh.TRANSFORM_3D,"actual chunked MultiMeshInstance3D cards")
-	check(chunk.multimesh.custom_aabb.position.x < 0 and chunk.multimesh.custom_aabb.size.x > 512,"local chunk bounds include wind and lean")
-	for angle in [-0.4,0.0,0.4]:
-		var basis := Basis(Vector3.UP,angle).scaled(Vector3(12,27,27))
-		var local_up := (basis.transposed()*Vector3.UP).normalized()
-		var world_up := (basis.inverse().transposed()*local_up).normalized()
-		check(world_up.is_equal_approx(Vector3.UP),"upward normal survives inverse-transpose under nonuniform transform")
+	check(chunk.multimesh.custom_aabb.position.x < 0 and chunk.multimesh.custom_aabb.size.x > grass.CELL,"local chunk bounds include wind and lean")
 	var shader: String = grass.grass_material.shader.code
-	check(shader.contains("tip * tip") and shader.contains("clamp(VERTEX.y, 0.0, 1.0)"),"root weight zero anchors wind to blade roots")
+	check(shader.contains("tip * tip") and shader.contains("clamp(1.0 - UV.y, 0.0, 1.0)"),"root weight zero anchors wind to blade roots")
+	check(shader.contains("world_vertex_coords") and shader.contains("NORMAL = vec3(0.0, 1.0, 0.0)"),"world-space shader sets world-up normal directly")
 	check(shader.contains("ALPHA_SCISSOR_THRESHOLD = 0.5"),"binary alpha cutout rather than soft overlapping transparency")
-	for x in range(28):
+	for x in range(52):
 		grass.chunk_for(Vector2i(x,10))
-	check(grass.chunks.size() <= 24,"3D chunk cache bounded across world travel")
+	check(grass.chunks.size() <= 48,"3D chunk cache bounded across world travel")
 	game.set_grass_quality(0,false)
 	check(grass.chunks.is_empty() and grass.viewport_3d.render_target_update_mode == SubViewport.UPDATE_DISABLED,"grass Off frees chunks and stops 3D rendering")
 	sound.set_muted(true)

@@ -87,7 +87,7 @@ func stats(values: Array[float]) -> Dictionary:
 	return {"mean": total / values.size(), "p50": values[int((values.size() - 1) * 0.5)], "p95": values[int((values.size() - 1) * 0.95)], "p99": values[int((values.size() - 1) * 0.99)], "max": values[-1]}
 
 func finish() -> void:
-	var result := {"samples": frames.size(), "frame_interval_ms": stats(frames), "tick_cpu_ms": stats(tick_cpu), "draw_submission_cpu_ms": stats(draw_cpu), "draw_calls": stats(draw_calls), "catchup_frames": catchup_frames, "completed_dashes": game.state.completed_words, "seeded_cells": game.state.seeded_cells.size(), "terrain_chunks_built": game.terrain_build_count, "terrain_chunks_retained": game.ground_chunks.size(), "nested_model_cpu": game.state.summary(), "renderer": RenderingServer.get_video_adapter_name(), "ffmpeg_running": false, "timer_refilled_for_timing": true}
+	var result := {"samples": frames.size(), "frame_interval_ms": stats(frames), "tick_cpu_ms": stats(tick_cpu), "draw_submission_cpu_ms": stats(draw_cpu), "draw_calls": stats(draw_calls), "catchup_frames": catchup_frames, "completed_dashes": game.state.completed_words, "seeded_cells": game.state.seeded_cells.size(), "ground_technique": game.GROUND_TECHNIQUE, "nested_model_cpu": game.state.summary(), "renderer": RenderingServer.get_video_adapter_name(), "ffmpeg_running": false, "timer_refilled_for_timing": true}
 	var file := FileAccess.open(output, FileAccess.WRITE)
 	file.store_string(JSON.stringify(result, "  "))
 	print("RENDER PROFILE ", JSON.stringify({"frames": result.frame_interval_ms, "draw_cpu": result.draw_submission_cpu_ms, "model": result.tick_cpu_ms, "dashes": result.completed_dashes}))

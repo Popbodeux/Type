@@ -99,4 +99,4 @@ func _draw() -> void:
 		for i in 3:
 			button(grass_rect(i), ["OFF", "LOW", "HIGH"][i], game.grass_quality == i)
 	draw_rect(Rect2(0, 524, 960, 16), Color(0.04, 0.1, 0.06, 0.85))
-	label("v0.4.0   F8 GRASS: %s   F10 SOUND: %s" % [["OFF", "LOW", "HIGH"][game.grass_quality], "MUTED" if game.sound and game.sound.muted else "ON"], Vector2(8, 536), 10, GOLD)
+	label("v0.4.1   F8 GRASS: %s   F10 SOUND: %s" % [["OFF", "LOW", "HIGH"][game.grass_quality], "MUTED" if game.sound and game.sound.muted else "ON"], Vector2(8, 536), 10, GOLD)

@@ -117,13 +117,8 @@ func run() -> void:
 	root.add_child(game)
 	game.set_physics_process(false)
 	check(game.NEUTRAL_WORD != game.TYPED_PREFIX, "typed glyph color is separate from neutral base labels")
-	var key := Vector2i(14, 10)
-	var first = game.ground_chunk(key)
-	var built: int = game.terrain_build_count
-	check(game.ground_chunk(key) == first and game.terrain_build_count == built, "stationary terrain cache reuses uploaded texture")
-	for x in range(30):
-		game.ground_chunk(Vector2i(x, 10))
-	check(game.ground_chunks.size() <= 24 and game.ground_chunk_order.size() <= 24, "terrain cache is bounded rather than growing with whole-map travel")
+	check(game.GROUND_COLOR == Color("526b43"), "muted green solid ground color")
+	check(not game.has_method("ground_chunk"), "runtime has no tiled terrain cache or texture generation")
 	game.queue_free()
 	var file := FileAccess.open("res://artifacts/playtest-fixes-results.json", FileAccess.WRITE)
 	file.store_string(JSON.stringify({"checks": checks, "passed": checks - failures.size(), "failures": failures, "aggro_enter": 140, "aggro_exit": 190}, "  "))

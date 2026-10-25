@@ -10,10 +10,10 @@ func capture(name: String) -> Image:
 	game.hud.queue_redraw()
 	await RenderingServer.frame_post_draw
 	var result := root.get_texture().get_image()
-	result.save_png("res://artifacts/v0.4.0-scenery/"+name+".png")
+	result.save_png("res://artifacts/v0.4.1-scenery/"+name+".png")
 	return result
 func run() -> void:
-	DirAccess.make_dir_recursive_absolute("res://artifacts/v0.4.0-scenery")
+	DirAccess.make_dir_recursive_absolute("res://artifacts/v0.4.1-scenery")
 	root.size = Vector2i(960,540)
 	game = load("res://survival.tscn").instantiate()
 	root.add_child(game)
@@ -31,7 +31,7 @@ func run() -> void:
 	game.grass.grass_material.set_shader_parameter("debug_normals",true)
 	await capture("normals-composited")
 	var raw: Image = game.grass.viewport_3d.get_texture().get_image()
-	raw.save_png("res://artifacts/v0.4.0-scenery/normals-3d.png")
+	raw.save_png("res://artifacts/v0.4.1-scenery/normals-3d.png")
 	var up := 0
 	var opaque := 0
 	for y in raw.get_height():
@@ -42,7 +42,7 @@ func run() -> void:
 				if absf(c.r-0.5)<0.03 and c.g>0.97 and absf(c.b-0.5)<0.03:
 					up += 1
 	proofs["normals"] = {"opaque_pixels":opaque,"upward_pixels":up,"passed":opaque>100 and up==opaque}
-	var file := FileAccess.open("res://artifacts/v0.4.0-scenery/results.json",FileAccess.WRITE)
+	var file := FileAccess.open("res://artifacts/v0.4.1-scenery/results.json",FileAccess.WRITE)
 	file.store_string(JSON.stringify(proofs,"  "))
 	print("SCENERY CHECK: ",proofs)
 	game.queue_free()

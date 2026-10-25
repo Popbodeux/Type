@@ -5,7 +5,7 @@ import subprocess
 import zipfile
 
 root = Path(__file__).resolve().parent.parent
-VERSION = "0.4.0"
+VERSION = "0.4.1"
 bundle = root / f"artifacts/type-space-dash-v{VERSION}-windows-x86_64"
 bundle.mkdir(parents=True, exist_ok=True)
 subprocess.run([
@@ -43,8 +43,12 @@ F8 cycles grass Off/Low/High. Low is the default. Real chunked 3D alpha-cutout
 cards sway behind the 2D gameplay; Off stops that extra rendering pass.
 
 This reconstructs the selected older GameMaker snapshot from inspected source.
-The three original ground tiles are included unchanged, rendered at2x with
-the source tint and hash pattern. Actors remain placeholders; sound effects are new original synthesized audio. Historical regional duplicate-word behavior is preserved.
+The old textured ground is replaced by one flat muted-green canvas fill.
+Original tiles remain unchanged in source reference. Denser 3D grass clumps
+vary in height, direction and color. Low renders grass at 640x360 while actors
+and labels stay native; High has more blades and native-resolution grass.
+Actors remain placeholders; sound effects are new original synthesized audio.
+Historical regional duplicate-word behavior is preserved.
 Stable target IDs and bounded restock loops deliberately fix stale-index/hang
 hazards; gameover statistics freeze and Resume hitbox fixes are also retained.
 

@@ -524,9 +524,10 @@ func run() -> void:
 	var scene = load("res://survival.tscn").instantiate()
 	root.add_child(scene)
 	scene.set_physics_process(false)
-	check(scene.tiles.size() == 3 and scene.tile_verification.size() == 3, "all three original16x16 PNGs pass runtime file and pixel verification")
-	for proof in scene.tile_verification:
-		check(proof.verified and proof.file_bytes_verified and proof.width == 16 and proof.height == 16, "original PNG bytes and decoded pixels verified")
+	check(scene.GROUND_TECHNIQUE == "single solid-color CanvasItem rectangle", "runtime ground uses one flat canvas fill")
+	for i in scene.TILE_NAMES.size():
+		var path: String = "res://assets/env_tiles/" + scene.TILE_NAMES[i]
+		check(FileAccess.get_sha256(path) == scene.TILE_HASHES[i], "original ground PNG preserved unchanged as source reference")
 	scene.queue_free()
 
 	category = "terrain_hash_and_repeatability"
