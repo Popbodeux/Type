@@ -8,7 +8,7 @@ import argparse, json, hashlib
 from PIL import Image
 root = Path(__file__).resolve().parent.parent
 parser = argparse.ArgumentParser()
-parser.add_argument('--image', type=Path, default=root/'artifacts/v0.4.2-scenery/off.png')
+parser.add_argument('--image', type=Path, default=root/'artifacts/v0.4.3-scenery/off.png')
 args = parser.parse_args()
 frame = Image.open(args.image).convert('RGB')
 assert frame.size == (960,540)

@@ -10,7 +10,7 @@ var calls: Array[float] = []
 var catchup := 0
 var route: Array[Vector2] = []
 var commanded: Array[Vector2] = []
-var output := "res://artifacts/performance/v0.4.2/fixed.json"
+var output := "res://artifacts/performance/v0.4.3/fixed.json"
 var quality := "off"
 var finished := false
 var started_us := 0
@@ -29,7 +29,7 @@ func _ready() -> void:
 	s.rng.seed = 1764
 	s.difficulty = 2
 	s.reset_run()
-	s.save_path = "res://artifacts/performance/v0.4.2/unused-save.ini"
+	s.save_path = "res://artifacts/performance/v0.4.3/unused-save.ini"
 	for ignored in 300:
 		if s.orbs.size() >= 180:
 			break

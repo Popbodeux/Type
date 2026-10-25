@@ -5,7 +5,7 @@ import subprocess
 import zipfile
 
 root = Path(__file__).resolve().parent.parent
-VERSION = "0.4.2"
+VERSION = "0.4.3"
 bundle = root / f"artifacts/type-space-dash-v{VERSION}-windows-x86_64"
 bundle.mkdir(parents=True, exist_ok=True)
 subprocess.run([
@@ -48,7 +48,11 @@ Original tiles remain unchanged in source reference. Short dense 3D meadow clust
 have softer color patches and wind. A 15-degree oblique camera maps ground
 roots to preserve 2D gameplay alignment. Low renders grass at 800x450 while actors
 and labels stay native; High has more blades and native-resolution grass.
-Card width scaling and two-sided upward shading are corrected.
+All card widths are fixed along world +X/screen-left-right instead of random
+yaw; height stays world +Y and gentle wind moves tips along +X only. Small
+position/height/color/phase variation remains. Faint horizontal bands remain
+visible; this is a bounded direction playtest. Card width scaling and
+two-sided upward shading fixes are retained.
 Actors remain placeholders; sound effects are new original synthesized audio.
 Historical regional duplicate-word behavior is preserved.
 Stable target IDs and bounded restock loops deliberately fix stale-index/hang

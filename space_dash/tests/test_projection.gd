@@ -1,7 +1,7 @@
 extends SceneTree
 ## Hybrid camera regression. Add -- --render for private front/back normal frames.
 ## All raw evidence stays in ignored artifacts/projection-qa/.
-const OUTPUT := "res://artifacts/projection-qa"
+const OUTPUT := "res://artifacts/projection-qa/v0.4.3"
 var checks := 0
 var failures: Array[String] = []
 var maximum_projection_error := 0.0
@@ -52,6 +52,10 @@ func inspect_actual_cards() -> void:
 	var max_height_error := 0.0
 	var max_lean_error := 0.0
 	var max_axis_error := 0.0
+	var max_width_axis_error := 0.0
+	var max_screen_vertical_delta := 0.0
+	var min_screen_horizontal_delta := INF
+	var screen_width_samples := 0
 	var max_root_height := 0.0
 	var max_bounds_error := 0.0
 	var count := 0
@@ -69,18 +73,32 @@ func inspect_actual_cards() -> void:
 			max_width_error = maxf(max_width_error,absf(width-float(grass.CARD_WIDTH)*scale_value))
 			max_height_error = maxf(max_height_error,absf(height-float(grass.CARD_HEIGHT)*scale_value))
 			max_lean_error = maxf(max_lean_error,absf(Vector2(tip.x,tip.z).length()/tip.y-float(grass.CARD_LEAN)))
-			max_axis_error = maxf(max_axis_error,transform.basis.y.normalized().distance_to(Vector3.UP))
+			var world_width: Vector3 = chunk.global_basis*transform.basis.x
+			var world_height: Vector3 = chunk.global_basis*transform.basis.y
+			max_axis_error = maxf(max_axis_error,world_height.normalized().distance_to(Vector3.UP))
+			max_width_axis_error = maxf(max_width_axis_error,world_width.normalized().distance_to(Vector3.RIGHT))
+			if count%127 == 0:
+				var root_point: Vector3 = chunk.global_transform*transform.origin
+				var root_screen: Vector2 = grass.camera_3d.unproject_position(root_point)
+				var edge_screen: Vector2 = grass.camera_3d.unproject_position(root_point+world_width)
+				var delta := (edge_screen-root_screen)*Vector2(960,540)/Vector2(grass.viewport_3d.size)
+				max_screen_vertical_delta = maxf(max_screen_vertical_delta,absf(delta.y))
+				min_screen_horizontal_delta = minf(min_screen_horizontal_delta,delta.x)
+				screen_width_samples += 1
 			max_root_height = maxf(max_root_height,absf((chunk.global_transform*transform.origin).y))
 			for point in [transform.origin,transform.origin+tip]:
 				var closest: Vector3 = point.clamp(box.position,box.end)
 				max_bounds_error = maxf(max_bounds_error,point.distance_to(closest))
 			count += 1
-	geometry_results = {"worst_width":width_example,"cards":count,"max_width_error":max_width_error,"max_height_error":max_height_error,"max_lean_ratio_error":max_lean_error,"max_vertical_axis_error":max_axis_error,"max_root_y":max_root_height,"max_bounds_error":max_bounds_error}
+	geometry_results = {"worst_width":width_example,"cards":count,"max_width_error":max_width_error,"max_height_error":max_height_error,"max_lean_ratio_error":max_lean_error,"max_vertical_axis_error":max_axis_error,"max_world_width_axis_error":max_width_axis_error,"max_screen_width_vertical_delta":max_screen_vertical_delta,"min_screen_width_horizontal_delta":min_screen_horizontal_delta,"screen_width_samples":screen_width_samples,"max_root_y":max_root_height,"max_bounds_error":max_bounds_error}
 	check(count>100,"inspect populated actual instance transforms")
 	check(max_width_error<0.001,"yaw preserves blade width under local nonuniform scaling")
 	check(max_height_error<0.001,"all local heights remain world-up")
 	check(max_lean_error<0.001,"yaw does not shear intended blade lean")
-	check(max_axis_error<0.001,"instance height axes remain upright")
+	check(max_axis_error<0.001,"all field card height axes remain upright in world space")
+	check(max_width_axis_error<0.001,"all field card width axes remain world-RIGHT instead of random yaw")
+	check(screen_width_samples>50 and min_screen_horizontal_delta>0,"actual card width projects positively from screen left to right")
+	check(max_screen_vertical_delta<0.01,"actual field card widths stay screen-horizontal under the tilted camera")
 	check(max_root_height<0.001,"all actual card roots lie on mapped ground plane")
 	check(max_bounds_error<0.001,"chunk-local bounds contain root and baked tip")
 

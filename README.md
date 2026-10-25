@@ -2,19 +2,19 @@
 
 The latest desktop playtest reconstructs the selected older grass-ground GameMaker version in Godot 4.6.3.
 
-**[Download Windows v0.4.2](https://raw.githubusercontent.com/Popbodeux/Type/main/downloads/space-dash-v0.4.2/type-space-dash-v0.4.2-windows-x86_64.zip)** — extract the entire ZIP, then double-click `TypeSpaceDash.exe`. Keep `TypeSpaceDash.pck` beside it. Godot installation is not required to play.
+**[Download Windows v0.4.3](https://raw.githubusercontent.com/Popbodeux/Type/main/downloads/space-dash-v0.4.3/type-space-dash-v0.4.3-windows-x86_64.zip)** — extract the entire ZIP, then double-click `TypeSpaceDash.exe`. Keep `TypeSpaceDash.pck` beside it. Godot installation is not required to play.
 
-- [Source ZIP v0.4.2](https://raw.githubusercontent.com/Popbodeux/Type/main/downloads/space-dash-v0.4.2/type-space-dash-v0.4.2-source.zip), or open `space_dash/project.godot` from this repository.
+- [Source ZIP v0.4.3](https://raw.githubusercontent.com/Popbodeux/Type/main/downloads/space-dash-v0.4.3/type-space-dash-v0.4.3-source.zip), or open `space_dash/project.godot` from this repository.
 - [Previous v0.4.0 gameplay recording](https://raw.githubusercontent.com/Popbodeux/Type/main/media/space-dash-v0.4.0/gameplay.mp4) (before the solid-ground/lush-density change).
-- [Controls and source-parity notes](space_dash/README.md), [validation](space_dash/VALIDATION.md), and [checksums](downloads/space-dash-v0.4.2/SHA256SUMS.txt).
+- [Controls and source-parity notes](space_dash/README.md), [validation](space_dash/VALIDATION.md), and [checksums](downloads/space-dash-v0.4.3/SHA256SUMS.txt).
 
 Choose a difficulty and **NEW GAME**. Type an orb's exact case-sensitive word, then press **Space** to dash to it. Backspace edits; Escape pauses; R or Enter restarts gameover. Survive the 30-second timer using orb/combat rewards. The ground is now a flat muted-green fill beneath fuller 3D grass; original tiles are preserved as source reference. Actors remain placeholders; this version adds original synthesized sound effects. Historical regional duplicate-word behavior is preserved.
 
 **The Windows executable has not been run on Windows or Wine.** Export/structure checks and Linux game-pack playthroughs are documented separately. This is a source-based reconstruction with documented safety fixes, not a claim of full original-executable parity.
 
-This playtest adds clearer matching words, more opaque orbs, calmer nearby enemies, sound controls, and shorter continuous 3D meadow grass with a modest oblique view over flat ground. F8 switches Off/Low/High grass; F10 mutes sound. [Performance evidence](space_dash/PERFORMANCE.md) includes remaining cloud/Windows limits.
+This playtest adds clearer matching words, more opaque orbs, calmer nearby enemies, sound controls, and short 3D meadow grass with fixed left-to-right card widths and wind under a modest oblique camera. F8 switches Off/Low/High grass; F10 mutes sound. [Performance evidence](space_dash/PERFORMANCE.md) includes remaining cloud/Windows limits.
 
-[Previous v0.4.1 Windows build](https://raw.githubusercontent.com/Popbodeux/Type/main/downloads/space-dash-v0.4.1/type-space-dash-v0.4.1-windows-x86_64.zip), [v0.4.0 Windows build](https://raw.githubusercontent.com/Popbodeux/Type/main/downloads/space-dash-v0.4.0/type-space-dash-v0.4.0-windows-x86_64.zip), [v0.3.0 Windows build](https://raw.githubusercontent.com/Popbodeux/Type/main/downloads/space-dash-v0.3.0/type-space-dash-v0.3.0-windows-x86_64.zip) and [v0.2.0 Windows build](https://raw.githubusercontent.com/Popbodeux/Type/main/downloads/space-dash-v0.2.0/type-space-dash-v0.2.0-windows-x86_64.zip) remain unchanged.
+[Previous v0.4.2 Windows build](https://raw.githubusercontent.com/Popbodeux/Type/main/downloads/space-dash-v0.4.2/type-space-dash-v0.4.2-windows-x86_64.zip), [v0.4.1 Windows build](https://raw.githubusercontent.com/Popbodeux/Type/main/downloads/space-dash-v0.4.1/type-space-dash-v0.4.1-windows-x86_64.zip), [v0.4.0 Windows build](https://raw.githubusercontent.com/Popbodeux/Type/main/downloads/space-dash-v0.4.0/type-space-dash-v0.4.0-windows-x86_64.zip), [v0.3.0 Windows build](https://raw.githubusercontent.com/Popbodeux/Type/main/downloads/space-dash-v0.3.0/type-space-dash-v0.3.0-windows-x86_64.zip) and [v0.2.0 Windows build](https://raw.githubusercontent.com/Popbodeux/Type/main/downloads/space-dash-v0.2.0/type-space-dash-v0.2.0-windows-x86_64.zip) remain unchanged.
 
 ## Earlier Chi Circuit prototype
 

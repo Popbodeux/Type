@@ -5,6 +5,7 @@ const MAX_CHUNKS := 48
 const CARD_WIDTH := 20.0
 const CARD_HEIGHT := 18.0
 const CARD_LEAN := 0.18
+const CARD_YAW := 0.0 # Width along world +X, which is screen-left/right.
 var camera_tilt_degrees := 15.0
 var patch_noise: FastNoiseLite
 var game
@@ -138,7 +139,7 @@ func chunk_for(key: Vector2i) -> MultiMeshInstance3D:
 			var patch := clampf(0.5+0.7*broad+0.3*detail,0,1)
 			for blade in (2 if quality == 1 else 4):
 				var seed := hash_cell(gx,gy,blade+1)
-				var angle := seed%628 / 100.0
+				var angle := CARD_YAW
 				var scale_value := 0.90+(seed%23)/100.0
 				var basis := Basis(Vector3.UP,angle).scaled_local(Vector3(CARD_WIDTH*scale_value,CARD_HEIGHT*scale_value,CARD_HEIGHT*scale_value))
 				var origin := Vector3(pos.x-key.x*CELL+(seed%13)-6,0,(pos.y-key.y*CELL+((seed/13)%13)-6)*projection_scale)

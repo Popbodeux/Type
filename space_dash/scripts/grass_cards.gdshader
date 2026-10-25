@@ -12,7 +12,8 @@ void vertex() {
     blade_tint.rgb *= mix(0.88, 1.06, cloud);
     float gust = cloud; // Share the broad gust sample with cloud tint; no second lookup.
     float sway = sin(TIME * 0.7 + world.x * 0.004 + world.z * 0.003);
-    world.xz += vec2(1.0, 0.35) * (sway * 0.5 + (gust - 0.5) * 0.8) * tip * tip;
+    float breeze = 0.35 + sway * 0.25 + (gust - 0.5) * 0.2;
+    world.xz += vec2(1.0, 0.0) * breeze * tip * tip;
     VERTEX = world;
     // world_vertex_coords presents vertices AND normals in world space.
     // Godot subsequently transforms this world-up normal into view space.

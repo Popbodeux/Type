@@ -1,0 +1,63 @@
+{
+  "audio_muted_for_profile": true,
+  "camera_tilt_degrees": 15.0,
+  "card_dimensions": [
+    20.0,
+    18.0,
+    0.18
+  ],
+  "catchup_frames": 165,
+  "commanded_dashes": 14,
+  "commands": [
+    "(8552.0, 5384.8)",
+    "(8912.0, 5524.8)",
+    "(9272.0, 5384.8)",
+    "(9632.0, 5244.8)",
+    "(9992.0, 5384.8)",
+    "(10352.0, 5524.8)",
+    "(10712.0, 5384.8)",
+    "(11072.0, 5244.8)",
+    "(11072.0, 5384.8)",
+    "(10712.0, 5524.8)",
+    "(10352.0, 5384.8)",
+    "(9992.0, 5244.8)",
+    "(9632.0, 5384.8)",
+    "(9272.0, 5524.8)"
+  ],
+  "draw_calls": {
+    "max": 299.0,
+    "mean": 233.490974729242,
+    "p95": 289.0,
+    "p99": 294.0
+  },
+  "draw_submission_cpu_ms": {
+    "max": 3.61,
+    "mean": 0.999907942238268,
+    "p95": 1.311,
+    "p99": 2.976
+  },
+  "frame_interval_ms": {
+    "max": 42.713,
+    "mean": 21.6820054151624,
+    "p95": 27.445,
+    "p99": 33.273
+  },
+  "grass_cached_chunks": 48,
+  "grass_viewport_resolution": [
+    800,
+    450
+  ],
+  "grass_visible_cards": 7482,
+  "model_cpu_ms": {
+    "max": 12.655,
+    "mean": 0.342314079422382,
+    "p95": 0.973,
+    "p99": 1.472
+  },
+  "physics_ticks": 900,
+  "quality": "low",
+  "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+  "samples": 554,
+  "state_fingerprint": "3ef7419c73fa675649b7527134b7f0a4d3c6ef7ea6a0c72d13f178876ba4b3a7",
+  "synthetic_timer_refill": true
+}
