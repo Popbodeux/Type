@@ -1,0 +1,24 @@
+; Separate project: historical source-based survival revision. No final export yet.
+config_version=5
+
+[application]
+config/name="Type Grass Space Dash"
+run/main_scene="res://survival.tscn"
+config/features=PackedStringArray("4.6", "GL Compatibility")
+config/description="Source-based Space-to-dash survival reconstruction; reference grass assets pending."
+
+[display]
+window/size/viewport_width=960
+window/size/viewport_height=540
+window/size/window_width_override=960
+window/size/window_height_override=540
+window/stretch/mode="canvas_items"
+
+[physics]
+common/physics_ticks_per_second=60
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/canvas_textures/default_texture_filter=0
+environment/defaults/default_clear_color=Color(0.30588, 0.59608, 0.3451, 1)
