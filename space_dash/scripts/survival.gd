@@ -4,6 +4,8 @@ const R = preload("res://scripts/reference_rules.gd")
 const Hud = preload("res://scripts/survival_hud.gd")
 const TILE_NAMES := ["env_grass_plain_00.png", "env_grass_plain_01.png", "env_grass_plain_04.png"]
 const TILE_HASHES := ["d317fd92267a6d5fde8e135034caf3471e5532a292f44edae678af441bf0a941", "205f875be0ff4cc4b939a2c2fcf08f50537a384b9faa6ff93cfaff39c70e6982", "cef5788e5d35ec1c7895f9567a95993b6d89b6ec19f759a1ff7679a32b77a2ee"]
+const PIXEL_HASHES := ["8067d1ac4fedf542afce357b4222b61440ceee46435b4805b2a02bbb031ec640", "2cb39403921dad43781fca0bc48514d88d5b960ce24863459fc24eef407619c6", "4dc1d1ca9d0610fb9693144afc90822c24d4f903c28887f990f28462c6dd072a"]
+var tile_verification: Array[Dictionary] = []
 var state = Model.new()
 var camera: Camera2D
 var hud: Node2D
@@ -34,24 +36,46 @@ func _ready() -> void:
 
 func load_tiles() -> void:
 	tiles.clear()
+	tile_verification.clear()
 	for i in TILE_NAMES.size():
 		var path: String = "res://assets/env_tiles/" + TILE_NAMES[i]
-		if not FileAccess.file_exists(path):
+		var image: Image
+		var file_verified := false
+		if FileAccess.file_exists(path):
+			if FileAccess.get_sha256(path) != TILE_HASHES[i]:
+				assets_status = "GRASS ASSET HASH MISMATCH — FALLBACK"
+				return
+			file_verified = true
+			image = Image.new()
+			if image.load_png_from_buffer(FileAccess.get_file_as_bytes(path)) != OK:
+				assets_status = "GRASS PNG DECODE FAILED — FALLBACK"
+				return
+		elif ResourceLoader.exists(path):
+			# Godot exports may remap PNGs to imported textures; verify decoded pixels.
+			var texture := load(path) as Texture2D
+			if texture:
+				image = texture.get_image()
+		else:
 			return
-		if FileAccess.get_sha256(path) != TILE_HASHES[i]:
-			assets_status = "GRASS ASSET HASH MISMATCH — FALLBACK; VISUAL PARITY BLOCKED"
-			return
-		var image := Image.load_from_file(path)
 		if image == null or image.get_size() != Vector2i(16, 16):
 			assets_status = "GRASS ASSET DIMENSIONS INVALID — FALLBACK"
 			return
+		image.convert(Image.FORMAT_RGBA8)
+		var hashing := HashingContext.new()
+		hashing.start(HashingContext.HASH_SHA256)
+		hashing.update(image.get_data())
+		var pixel_hash := hashing.finish().hex_encode()
+		if pixel_hash != PIXEL_HASHES[i]:
+			assets_status = "GRASS PIXEL HASH MISMATCH — FALLBACK"
+			return
 		tiles.append(ImageTexture.create_from_image(image))
+		tile_verification.append({"name": TILE_NAMES[i], "original_file_sha256": TILE_HASHES[i], "file_bytes_verified": file_verified, "pixel_sha256": pixel_hash, "width": 16, "height": 16, "verified": true})
 	if tiles.size() == 3:
 		assets_status = "ORIGINAL GRASS TILES VERIFIED / ACTOR ART PLACEHOLDERS"
 
 func _physics_process(_delta: float) -> void:
 	state.tick()
-	camera.position = state.camera_pos
+	camera.position = state.camera_pos.round()
 	queue_redraw()
 	if is_instance_valid(hud):
 		hud.queue_redraw()
@@ -69,19 +93,20 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.keycode in [KEY_R, KEY_ENTER, KEY_KP_ENTER] and not event.echo:
 			state.reset_run()
 		return
-	if state.phase != "playing":
+	if state.phase not in ["playing", "paused"]:
 		return
-	if event.shift_pressed and event.keycode == KEY_Q:
+	if state.phase == "playing" and event.shift_pressed and event.keycode == KEY_Q:
 		state.end_run()
 		return
 	if event.ctrl_pressed or event.alt_pressed or event.meta_pressed:
 		return
 	if event.keycode == KEY_BACKSPACE:
-		state.queue_backspace()
+		state.queue_backspace(not event.echo)
 	elif event.keycode == KEY_SPACE:
+		state.queue_character(" ")
 		if not event.echo:
 			state.queue_space()
-	elif event.unicode >= 33:
+	elif event.unicode >= 33 or event.unicode in [10, 13]:
 		state.queue_character(String.chr(event.unicode))
 
 func handle_click(pos: Vector2) -> void:
@@ -97,6 +122,7 @@ func handle_click(pos: Vector2) -> void:
 		# Same shared rectangle for drawing and clicking: fixes original .50/.52 bug.
 		if Hud.resume_rect().has_point(pos):
 			state.toggle_pause()
+			state.skip_resume_tick = true
 		elif Hud.exit_rect("paused").has_point(pos):
 			get_tree().quit()
 	elif state.phase == "gameover" and Hud.exit_rect("gameover").has_point(pos):

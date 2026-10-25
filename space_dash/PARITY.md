@@ -2,14 +2,14 @@
 
 This separate Godot project reconstructs the user-selected, complete original grass-ground snapshot from a read-only source-inspection report. It is **not** a grass reskin of Chi Circuit. The original GameMaker executable has not been run here, and full behavioral/visual parity is not claimed.
 
-The delivered Chi Circuit source and downloads remain unchanged at commit `6050a57787a0eda6d7d4644561100674e192dbd5`. This revision is local on branch `grass-space-survival`; no new export or public upload has been performed.
+The earlier Chi Circuit project and downloads are preserved. This version is the separate `space_dash/` project and uses versioned v0.2.0 delivery paths.
 
 ## Implemented source-derived rules
 
 | Area | Implementation and verification |
 | --- | --- |
 | Runtime | Explicit 60-Hz physics reproduces source frame-based enemy movement and camera lerp. Timers use fixed 1/60-second steps. Same-seed replay is deterministic. |
-| Targeting | Case-sensitive prefix matching; only orb centers within the camera viewport inset24 can be newly selected. A sole prefix match locks a target; an exact accepted word can lock immediately. Backspace recomputes the sole match. |
+| Targeting | Case-sensitive prefix matching within inclusive24px camera bounds. First exact match in array order wins; otherwise an existing matching lock survives, then a sole match locks. Backspace uses sole-match-only selection. Confirmation does not recheck visibility. |
 | Confirmation | Completing a word alone does not move. Space requires the complete buffer to equal the active orb's word; empty/incomplete/repeated Space does nothing. Completed-word/character/streak counters update only on successful confirmation. |
 | Mid-dash input | Text is queued while dash processing is suspended, and processed on the first subsequent input tick. Backspace edits queued text. A Space press edge during dash/hit-stop is not replayed later. Explicit model tests and live keyboard playback cover this interpretation of retained GameMaker `keyboard_string`. |
 | Errors | Every processed non-space/non-newline character counts; wrong characters are rejected, cost0.75 seconds, reset combat combo and word streak, and flash red for0.18 seconds. Backspace has no accuracy/time penalty. |
@@ -21,43 +21,41 @@ The delivered Chi Circuit source and downloads remain unchanged at commit `6050a
 | Enemies | Source HP1/3/2, radii28/36/32, base speeds0.55/0.36/0.90 per60-Hz frame; chase ranges and multipliers440×1.2 and340×0.95, always-chasing kind2, chase Y×0.72, wander Y×0.55 and heading jitter±3degrees/frame. Facing updates toward player. Initial kinds[0,0,1,2]. |
 | Enemy spawn | Radius280–620, elliptical Y×0.72, clamped with40inset. Difficulty population targets6/7/8 with a local supplement; helper details below remain provisional. |
 | Words / difficulty | Exact supplied A/B/C/D pools, including case, apostrophes, hyphens, and Hard's duplicate entries. Easy48, Normal90, Hard208. Difficulty changes word pool/population, not initial timer or enemy base stats. |
-| Orbs | Global42minimum/180maximum; viewport inset(56,42) target18; player-near ellipse(460,320) target6. Seed surrounding3×3 cells of820×620 once, up to10placements/cell. Spacing tiers104/68/36 followed by bounded random fallback. Reject case-insensitive duplicate/whole-word-prefix conflicts in placement-region/viewport union. Prune beyond2112. |
+| Orbs |42minimum/180maximum, viewport target18 and near ellipse target6. Cell seeding attempts220calls for10successes in24px-inset cells (12px fallback for small axes). Placement uses96/64/64samples at104/68/36spacing, two initial overwritten draws, and fresh unspaced fallback. Eligible bank entries are enumerated with duplicate weighting. Conflict checks use the encompassing bounding rectangle of region and full viewport, inclusively. |
+| Coverage | Initial restock samples player±1100/850 clipped to orb bounds. Per-frame global restock uses the full arena. Local coverage prunes beyond2112, then makes up to32near-player calls and80viewport calls. Cell crossing and arrival also invoke coverage. |
 | Reward | Stored at spawn: max(0.32,(1.7+word_length×0.34)×scale). Distances strictly below1271.6 use0.36/tier0; below2842.4 use0.68/tier1; otherwise1/tier2. Boundary tests included. |
 | Stats | Accuracy correct/total, initially100%; gross WPM total×12/elapsed; displayed WPM gross×accuracy. Space/Backspace excluded. Best updates after1.5seconds and5keystrokes. |
 | Session / save | Mouse difficulty and NEW GAME; default Normal. Escape pause/resume clears typing on entry. Mouse resume/exit. R or Enter restarts gameover; Shift+Q forces it. High score uses `user://typergame_save.ini`, section`run`, key`high_score`. Reset clears run state and returns player to center+60Y without explicitly snapping camera. |
-| World / camera | World16384×10240, arena center(8192,5324.8), radii(7480,4120); viewport960×540; camera lerp0.085 per fixed frame. |
+| World / camera | World16384×10240, center(8192,5324.8), rectangular orb bounds X767–15617/Y1259.8–9389.8. Enemy spawn/movement clamp at40/35inset. Camera starts at arena center, clamps its target before0.085lerp, uses pre-update coordinates for selection/spawning, and rounds only for drawing. |
 | HUD | Top-center numeric timer and240×10 bar, red below8seconds; points/WPM/accuracy/best/streak upper-left, accepted text bottom-center, red mistake flash, gameover stats and restart instructions. No three-wave victory or vitality system. |
 
 ## Deliberate fixes
 
 - Statistics and elapsed-run time stop at gameover, rather than continuing behind the results screen. They still advance during hit-stop, as the source specifies.
 - Pause Resume drawing and clicks use the **same rectangle** starting at50% of height, fixing the source's drawn50%/clickable52% mismatch. The rendered test clicks the formerly missed top edge.
+- The two legacy unbounded minimum-restock loops have a256-call guard and stop when no eligible word exists. Other supplied placement/coverage budgets are preserved. This avoids a possible hang, so42 is a target rather than an unconditional guarantee under exhausted word pools.
+- Active/dash targets use stable IDs. Pruning cannot silently change the selected orb or grant another orb's reward because an array index shifted. A removed active target is invalidated safely.
 
-## Original grass: blocked on supported transfer
+## Original grass: verified and integrated
 
-The private asset migration package is confirmed elsewhere, but **not materialized in this executor**. There is no exposed Library skill/resolver/materialization API, neither skill catalog lists Library, and no supplied ZIP exists in the local Library/shared folders. The available `download_file` accepts Sediment files only, not the supplied Library/File Service reference. No alternate fetch route or public republication was attempted.
+The user approved publishing the three tiles and this revision. The tiles were transferred through verified asset commit `c9089c5279cfa329a7e46650415a1935d2456e66`, then merged without force updates. The original source PNGs remain unchanged in `reference_assets/original_grass/` and are copied byte-for-byte into this self-contained project.
 
-Required originals: `env_grass_plain_00.png`199bytes, `env_grass_plain_01.png`185bytes, `env_grass_plain_04.png`194bytes. Approved hashes are encoded in `scripts/survival.gd`; the loader rejects mismatched content or non-16×16 images. Once properly materialized, actual pixels must be inspected before claiming ground fidelity.
+Originals: `env_grass_plain_00.png`199bytes, `env_grass_plain_01.png`185bytes, `env_grass_plain_04.png`194bytes. File hashes,16×16 dimensions, and decoded RGBA hashes were verified and the actual pixels inspected. The loader also verifies decoded pixels when Godot exports remap PNGs to imported textures.
 
-The renderer already implements the supplied cell hash and86%/14% variant rule,32px world cells, nearest-neighbor sampling, RGB(178,236,136) tint, opacity1, and viewport-plus-one-tile coverage. While originals are absent it visibly labels and uses the source's own checkerboard fallback: RGB(78,152,88)/(98,176,102). This is **not original-grass visual parity**. Actor art and miss audio are also unavailable; actors use clearly provisional shapes and the miss has visual feedback only.
+The ground implements the source cell hash,86%plain/7%each variant,32px world cells, nearest-neighbor sampling, RGB(178,236,136)tint, opacity1, and viewport-plus-one-tile coverage. Screenshot sampling separately checks all three variants against those original pixels and transforms, allowing for text/actor overlays. Actor art and miss audio are unavailable: actors use provisional shapes and the miss has visual feedback only. Ground verification is not a claim of full original-game visual parity.
 
-## Source details not supplied; provisional implementation choices
+## Resolved source helpers and remaining limitations
 
-These cannot be called source-exact until the corresponding original helper code is inspected:
+Follow-up source inspection resolved the prior helper gaps. Rectangular bounds, placement regions/budgets, uniform eligible-entry choice,40px enemy view margin, pre-fill visible counter, integer enemy spawn radius,78%hurt retention, max hit-stop aggregation, and initial camera position are implemented. Text entered during pause/dash/hit-stop is retained; text processing precedes Space/Backspace edges. Mouse resume skips that update; Escape resume can continue immediately.
 
-- Arena boundary helper: currently interpreted as ellipse clamping from the supplied center/radii; exact source boundary and camera-edge handling are unverified.
-- Placement attempt counts:16attempts per104/68/36spacing tier, then unspaced fallback; bounded word retries and maintenance attempt budgets. The report supplies tiers/fallback, not these counts or the exact random sampling distribution.
-- Global minimum restock region and near-player candidate sampling; cell/viewport/local targets themselves match the supplied values.
-- Existing far-region duplicate words can later enter the moving viewport together. This was observed in the diagnostic playback; only spawn-time region/viewport conflict rejection was supplied. Post-movement duplicate reconciliation and exact-target tie ordering need the original helper before changing that behavior.
-- Enemy maintenance uses a provisional180px expanded-view margin and caps local supplements at population target+2; subsequent spawn kinds are uniformly selected because source weighting was not supplied.
-- Multi-hit hit-stop combines durations by maximum; assignment/aggregation order was not included in the report.
-- Initial camera position, sprite/rendering geometry, hurt-offset decay, exact title/menu layout, key-repeat details, and text typed while paused need source confirmation. Paused input is currently ignored; dash/hit-stop text is explicitly retained.
-- Miss sound, original actor sprites, other sound assets, and original executable rendering comparison remain unavailable.
+**Historical duplicate behavior is intentionally preserved.** Far-region duplicates can enter a moving viewport together. The original has no reconciliation pass and selects the first exact match. The highlighted target/route preview identifies which orb will be used; there is no separate typed command to choose its identical counterpart. This is a known legacy limitation, not silently replaced with global deduplication.
+
+Godot and GameMaker do not use the same RNG algorithm, so matching seeds do not imply identical random worlds across engines. Fixed60Hz behavior is deterministic within this implementation. Exact original actor rendering, menu geometry, camera shake, audio, executable comparison, and OS-specific repeat/input behavior remain unverified. No ellipse collision, distance cap, dash invulnerability, three-wave victory, or invented weak-side rule was added.
 
 ## Validation and delivery limits
 
 Run `bash scripts/godot.sh --headless --script res://tests/test_survival.gd` from this folder. Tests generate a category breakdown under ignored `artifacts/`. Assertions include repeated per-orb/pairwise coverage checks; the assertion total is not a count of independent scenarios or human play sessions. The old root project's551assertions belong to Chi Circuit, not this revision.
 
-The rendered playback uses actual engine mouse/key events on the normal scene, tests mid-dash queued text, Space confirmation, pause/resume top-edge clicking, forced/natural gameover, and R/Enter restart. Its recording is internal diagnostic evidence with the fallback explicitly marked; it is not a final playtest deliverable.
+The rendered playback uses actual engine mouse/key events on the normal scene and exported pack, testing mid-dash queued text, Space confirmation, pause/resume top-edge clicking, forced/natural gameover, and R/Enter restart. It records real gameplay, not a concept animation.
 
-**No final Windows export yet.** It remains blocked on original asset materialization/pixel inspection and parity review. No new public upload is authorized, and private asset-migration approval does not authorize publishing sprite bytes. The prior Windows download remains intact. Windows runtime, human usability, alternate input layouts, and long-session/performance checks are unrun for this revision.
+The v0.2.0 deliverable is a standalone Windows x86_64 ZIP with official Godot4.6.3 release templates. Export/PE/archive checks and Linux execution of its actual game pack are separate from Windows runtime testing: **the Windows executable has not been run on Windows or Wine**. Human usability, alternate layouts, and long-session/performance checks are unrun. The older downloads are preserved at their original paths.

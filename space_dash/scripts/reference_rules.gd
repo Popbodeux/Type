@@ -5,6 +5,8 @@ const VIEW := Vector2(960, 540)
 const WORLD := Vector2(16384, 10240)
 const ARENA_CENTER := Vector2(8192, 5324.8)
 const ARENA_RADII := Vector2(7480, 4120)
+const ARENA_RECT := Rect2(712, 1204.8, 14960, 8240)
+const ORB_BOUNDS := Rect2(767, 1259.8, 14850, 8130)
 const PLAYER_RADIUS := 10.0
 const DASH_TIME := 0.22
 const TIMER_MAX := 30.0
@@ -60,9 +62,8 @@ static func tile_index(cell: Vector2i) -> int:
 	return 1 + h % 2 if h >= 86 else 0
 
 static func arena_clamp(pos: Vector2, inset: float = 40.0) -> Vector2:
-	# Elliptical interpretation of the supplied center/radii; boundary helper pending.
-	var radii := ARENA_RADII - Vector2.ONE * inset
-	var relative := (pos - ARENA_CENTER) / radii
-	if relative.length_squared() > 1.0:
-		return ARENA_CENTER + relative.normalized() * radii
-	return pos
+	var bounds := ARENA_RECT.grow(-inset)
+	return pos.clamp(bounds.position, bounds.end)
+
+static func contains_inclusive(rect: Rect2, pos: Vector2) -> bool:
+	return pos.x >= rect.position.x and pos.x <= rect.end.x and pos.y >= rect.position.y and pos.y <= rect.end.y

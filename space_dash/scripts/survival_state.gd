@@ -44,6 +44,15 @@ var next_enemy_id := 0
 var last_cell := Vector2i(-99999, -99999)
 var maintenance_enabled := true
 var enemy_updates_enabled := true
+var skip_resume_tick := false
+var last_spawn_failure := ""
+const RESTOCK_BUDGET := 256 # Deliberate guard replacing legacy unbounded loops.
+var orb_revision := 0
+var eligible_cache_region := Rect2()
+var eligible_cache_difficulty := -1
+var eligible_cache_revision := -1
+var eligible_cache_size := -1
+var eligible_cache_words := PackedStringArray()
 
 func _init(seed_value: int = 0) -> void:
 	if seed_value == 0:
@@ -55,7 +64,7 @@ func viewport(inset: Vector2 = Vector2.ZERO) -> Rect2:
 	return Rect2(camera_pos - R.VIEW * 0.5 + inset, R.VIEW - inset * 2.0)
 
 func selectable(orb: Dictionary) -> bool:
-	return viewport(Vector2(24, 24)).has_point(orb.pos)
+	return R.contains_inclusive(viewport(Vector2(24, 24)), orb.pos)
 
 func find_orb(id: int) -> Dictionary:
 	for orb in orbs:
@@ -71,6 +80,7 @@ func matches(prefix: String) -> Array[Dictionary]:
 	return result
 
 func recompute_target(prefer_exact: bool = false) -> void:
+	var previous := active_id
 	active_id = -1
 	if buffer.is_empty():
 		return
@@ -80,22 +90,26 @@ func recompute_target(prefer_exact: bool = false) -> void:
 			if orb.word == buffer:
 				active_id = orb.id
 				return
+		for orb in found:
+			if orb.id == previous:
+				active_id = previous
+				return
 	if found.size() == 1:
 		active_id = found[0].id
 
 func queue_character(character: String) -> void:
-	if phase == "playing" and character.length() == 1 and character not in [" ", "\r", "\n"]:
+	if phase in ["playing", "paused"] and character.length() == 1:
 		queued_text += character
 
-func queue_backspace() -> void:
-	if phase != "playing":
+func queue_backspace(press_edge: bool = true) -> void:
+	if phase not in ["playing", "paused"]:
 		return
 	# GameMaker keyboard_string itself accumulates/edits while process_typing returns.
 	# A dash-frame Backspace edits pending text, never a discarded-input shortcut.
 	if not queued_text.is_empty():
 		queued_text = queued_text.left(queued_text.length() - 1)
-	elif not dash_active and hit_stop <= 0:
-		backspaces += 1
+	if press_edge:
+		backspaces = 1 # keyboard_check_pressed is one edge, not a held-key loop.
 
 func queue_space() -> void:
 	if phase == "playing":
@@ -122,19 +136,19 @@ func accept_character(character: String) -> bool:
 	notice_left = 0.6
 	return false
 
-func process_typing(confirm: bool) -> void:
+func process_typing(confirm: bool, edit: int = 0) -> void:
 	if dash_active:
 		return
-	for ignored in backspaces:
-		buffer = buffer.left(maxi(0, buffer.length() - 1))
-		recompute_target(false)
-	backspaces = 0
 	var text := queued_text
 	queued_text = ""
 	for character in text:
 		accept_character(character)
 	if confirm:
 		confirm_word()
+	# Source drains keyboard_string before Space and Backspace edge handling.
+	for ignored in edit:
+		buffer = buffer.left(maxi(0, buffer.length() - 1))
+		recompute_target(false)
 
 func confirm_word() -> bool:
 	if phase != "playing" or dash_active or hit_stop > 0:
@@ -203,9 +217,10 @@ func step_dash() -> void:
 		if not orb.is_empty():
 			add_time(orb.reward)
 			orbs.erase(orb)
+			orb_revision += 1
 		dash_orb_id = -1
 		if maintenance_enabled:
-			maintain_orbs()
+			ensure_local_coverage()
 
 func accuracy() -> float:
 	return float(correct_keys) / total_keys if total_keys > 0 else 1.0
@@ -229,7 +244,12 @@ func toggle_pause() -> void:
 
 func tick() -> void:
 	var confirm := space_pressed
+	var edit := backspaces
 	space_pressed = false
+	backspaces = 0
+	if skip_resume_tick:
+		skip_resume_tick = false
+		return
 	if phase != "playing":
 		return
 	# Deliberate fix: gameover is checked before stats; paused/gameover stats freeze.
@@ -251,16 +271,18 @@ func tick() -> void:
 	if timer <= 0:
 		end_run()
 		return
-	process_typing(confirm)
+	process_typing(confirm, edit)
 	step_dash()
 	if maintenance_enabled:
+		if seed_surrounding():
+			ensure_local_coverage()
 		maintain_orbs()
 	if enemy_updates_enabled:
 		update_enemies()
 		if maintenance_enabled:
 			maintain_enemies()
-	camera_pos = camera_pos.lerp(player, R.CAMERA_LERP)
-	camera_pos = camera_pos.clamp(R.VIEW * 0.5, R.WORLD - R.VIEW * 0.5)
+	var camera_target := player.clamp(R.VIEW * 0.5, R.WORLD - R.VIEW * 0.5)
+	camera_pos = camera_pos.lerp(camera_target, R.CAMERA_LERP)
 
 func reset_run() -> void:
 	phase = "playing"
@@ -290,6 +312,7 @@ func reset_run() -> void:
 	notice = ""
 	notice_left = 0.0
 	orbs.clear()
+	orb_revision += 1
 	enemies.clear()
 	sparks.clear()
 	trails.clear()
@@ -297,8 +320,10 @@ func reset_run() -> void:
 	next_orb_id = 0
 	next_enemy_id = 0
 	last_cell = Vector2i(-99999, -99999)
+	skip_resume_tick = false
 	if maintenance_enabled:
-		maintain_orbs()
+		seed_surrounding()
+		restock_minimum(Rect2(player - Vector2(1100, 850), Vector2(2200, 1700)).intersection(R.ORB_BOUNDS))
 	for kind in [0, 0, 1, 2]:
 		spawn_enemy(kind)
 	# Source reset deliberately does not snap the camera to the player.
@@ -328,10 +353,9 @@ func make_enemy(kind: int, pos: Vector2) -> Dictionary:
 
 func spawn_enemy(kind: int = -1) -> void:
 	if kind < 0:
-		# Kind distribution not supplied in inspection; uniform provisional choice.
 		kind = rng.randi_range(0, 2)
 	var angle := rng.randf_range(0, TAU)
-	var radius := rng.randf_range(280, 620)
+	var radius := rng.randi_range(280, 620)
 	var pos := player + Vector2(cos(angle) * radius, sin(angle) * radius * 0.72)
 	enemies.append(make_enemy(kind, R.arena_clamp(pos)))
 
@@ -353,43 +377,67 @@ func update_enemies() -> void:
 			enemy.heading += deg_to_rad(rng.randf_range(-3, 3))
 			direction = enemy.heading
 			enemy.pos += Vector2(cos(direction) * speed, sin(direction) * speed * 0.55)
-		enemy.pos = R.arena_clamp(enemy.pos)
-		enemy.hurt = Vector2(enemy.hurt).move_toward(Vector2.ZERO, 1.8)
+		enemy.pos = R.arena_clamp(enemy.pos, 35)
+		enemy.hurt = Vector2(enemy.hurt).lerp(Vector2.ZERO, 0.22)
 		if player.distance_to(enemy.pos) <= float(enemy.radius) + R.PLAYER_RADIUS:
 			timer -= (5.0 if enemy.kind == 2 else 3.0) * R.DT
 			combo = 0
 
 func maintain_enemies() -> void:
 	var target: int = R.ENEMY_TARGET[difficulty]
-	while enemies.size() < target:
-		spawn_enemy()
-	# Expanded-view margin/cap require the original helper for exact parity.
 	var nearby := 0
 	for enemy in enemies:
-		if viewport().grow(180).has_point(enemy.pos):
+		if R.contains_inclusive(viewport().grow(40), enemy.pos):
 			nearby += 1
-	if nearby < 3:
-		for ignored in mini(2, target + 2 - enemies.size()):
-			spawn_enemy()
+	while enemies.size() < target:
+		spawn_enemy()
+	# Source counter is measured before filling and blindly increments on supplement.
+	while nearby < 3 and enemies.size() < target + 2:
+		spawn_enemy()
+		nearby += 1
 
 func cell_for(pos: Vector2) -> Vector2i:
 	return Vector2i(floori(pos.x / R.CELL.x), floori(pos.y / R.CELL.y))
 
 func word_available(word: String, region: Rect2) -> bool:
+	var conflict_region := region.merge(viewport())
 	for orb in orbs:
-		if (region.has_point(orb.pos) or viewport().has_point(orb.pos)) and R.words_conflict(word, orb.word):
+		if R.contains_inclusive(conflict_region, orb.pos) and R.words_conflict(word, orb.word):
 			return false
 	return true
 
+func eligible_words(region: Rect2) -> PackedStringArray:
+	var bounds := region.merge(viewport())
+	if bounds == eligible_cache_region and difficulty == eligible_cache_difficulty and orb_revision == eligible_cache_revision and orbs.size() == eligible_cache_size:
+		return eligible_cache_words
+	var result := PackedStringArray()
+	for word in R.word_pool(difficulty):
+		if word_available(word, region):
+			result.append(word)
+	eligible_cache_region = bounds
+	eligible_cache_difficulty = difficulty
+	eligible_cache_revision = orb_revision
+	eligible_cache_size = orbs.size()
+	eligible_cache_words = result
+	return result
+
 func place_orb(region: Rect2) -> bool:
+	last_spawn_failure = ""
 	if orbs.size() >= R.ORB_MAX:
+		last_spawn_failure = "maximum"
 		return false
-	var pos := Vector2.ZERO
+	if region.size.x <= 0 or region.size.y <= 0:
+		last_spawn_failure = "empty_region"
+		return false
+	# Keep the source's two overwritten initial X/Y draws (RNG algorithm differs).
+	var pos := Vector2(rng.randf_range(region.position.x, region.end.x), rng.randf_range(region.position.y, region.end.y))
 	var found := false
-	# Reference tiers are exact; attempt counts were absent from supplied excerpts.
-	for spacing in [104.0, 68.0, 36.0]:
-		for ignored in 16:
-			pos = R.arena_clamp(Vector2(rng.randf_range(region.position.x, region.end.x), rng.randf_range(region.position.y, region.end.y)))
+	var spacings := [104.0, 68.0, 36.0]
+	var attempts := [96, 64, 64]
+	for phase_index in 3:
+		var spacing: float = spacings[phase_index]
+		for ignored in attempts[phase_index]:
+			pos = Vector2(rng.randf_range(region.position.x, region.end.x), rng.randf_range(region.position.y, region.end.y))
 			found = true
 			for other in orbs:
 				if pos.distance_to(other.pos) < spacing:
@@ -400,46 +448,69 @@ func place_orb(region: Rect2) -> bool:
 		if found:
 			break
 	if not found:
-		pos = R.arena_clamp(Vector2(rng.randf_range(region.position.x, region.end.x), rng.randf_range(region.position.y, region.end.y)))
-	var pool := R.word_pool(difficulty)
-	for ignored in pool.size() * 3:
-		var word: String = pool[rng.randi_range(0, pool.size() - 1)]
-		if word_available(word, region):
-			var details := R.reward(word, player.distance_to(pos))
-			orbs.append({"id": next_orb_id, "pos": pos, "word": word, "reward": details.reward, "tier": details.tier})
-			next_orb_id += 1
-			return true
-	return false
+		pos = Vector2(rng.randf_range(region.position.x, region.end.x), rng.randf_range(region.position.y, region.end.y))
+	var pool := eligible_words(region)
+	if pool.is_empty():
+		last_spawn_failure = "no_eligible_word"
+		return false
+	var word: String = pool[rng.randi_range(0, pool.size() - 1)]
+	var details := R.reward(word, player.distance_to(pos))
+	orbs.append({"id": next_orb_id, "pos": pos, "word": word, "reward": details.reward, "tier": details.tier})
+	orb_revision += 1
+	next_orb_id += 1
+	return true
 
-func seed_surrounding() -> void:
+func seed_surrounding() -> bool:
 	var cell := cell_for(player)
 	if cell == last_cell:
-		return
+		return false
 	last_cell = cell
 	for y in range(cell.y - 1, cell.y + 2):
 		for x in range(cell.x - 1, cell.x + 2):
-			var key := Vector2i(x, y)
+			var key := Vector2i(clampi(x, 0, ceili(R.WORLD.x / R.CELL.x) - 1), clampi(y, 0, ceili(R.WORLD.y / R.CELL.y) - 1))
 			if seeded_cells.has(key):
 				continue
 			seeded_cells[key] = true
-			var region := Rect2(Vector2(key) * R.CELL, R.CELL)
-			for ignored in 10:
-				place_orb(region)
+			var cell_region := Rect2(Vector2(key) * R.CELL, R.CELL)
+			var region := cell_region.grow(-24).intersection(R.ORB_BOUNDS)
+			if region.size.x <= 30:
+				var retry := cell_region.grow_individual(-12, -24, -12, -24).intersection(R.ORB_BOUNDS)
+				region.position.x = retry.position.x
+				region.size.x = retry.size.x
+			if region.size.y <= 30:
+				var retry := cell_region.grow_individual(-24, -12, -24, -12).intersection(R.ORB_BOUNDS)
+				region.position.y = retry.position.y
+				region.size.y = retry.size.y
+			var placed := 0
+			for ignored in 220:
+				if placed >= 10 or orbs.size() >= R.ORB_MAX or region.size.x <= 0 or region.size.y <= 0:
+					break
+				if place_orb(region):
+					placed += 1
+	return true
+
+func restock_minimum(region: Rect2) -> int:
+	var calls := 0
+	while orbs.size() < R.ORB_MIN and calls < RESTOCK_BUDGET:
+		calls += 1
+		if not place_orb(region) and last_spawn_failure in ["no_eligible_word", "empty_region", "maximum"]:
+			# No state can improve inside this loop: avoid the original infinite retry.
+			break
+	return calls
 
 func maintain_orbs() -> void:
-	orbs = orbs.filter(func(o: Dictionary) -> bool: return player.distance_to(o.pos) <= R.PRUNE_DISTANCE or o.id == dash_orb_id)
-	seed_surrounding()
-	var region := viewport(Vector2(56, 42))
-	for ignored in 60:
-		var count := 0
-		for orb in orbs:
-			if region.has_point(orb.pos):
-				count += 1
-		if count >= R.VIEW_TARGET or orbs.size() >= R.ORB_MAX:
-			break
-		place_orb(region)
-	var near_region := Rect2(player - R.NEAR_RADII, R.NEAR_RADII * 2.0)
-	for ignored in 40:
+	restock_minimum(R.ORB_BOUNDS)
+	ensure_local_coverage()
+
+func ensure_local_coverage() -> void:
+	var old_size := orbs.size()
+	orbs = orbs.filter(func(o: Dictionary) -> bool: return player.distance_to(o.pos) <= R.PRUNE_DISTANCE)
+	if orbs.size() != old_size:
+		orb_revision += 1
+	if active_id >= 0 and find_orb(active_id).is_empty():
+		active_id = -1 # Stable identity: pruning must not silently retarget another orb.
+	var near_region := Rect2(player - R.NEAR_RADII, R.NEAR_RADII * 2.0).intersection(R.ORB_BOUNDS)
+	for ignored in 32:
 		var count := 0
 		for orb in orbs:
 			if ((Vector2(orb.pos) - player) / R.NEAR_RADII).length_squared() <= 1.0:
@@ -447,7 +518,12 @@ func maintain_orbs() -> void:
 		if count >= R.NEAR_TARGET or orbs.size() >= R.ORB_MAX:
 			break
 		place_orb(near_region)
-	for ignored in 60:
-		if orbs.size() >= R.ORB_MIN:
+	var region := viewport(Vector2(56, 42)).intersection(R.ORB_BOUNDS)
+	for ignored in 80:
+		var count := 0
+		for orb in orbs:
+			if R.contains_inclusive(region, orb.pos):
+				count += 1
+		if count >= R.VIEW_TARGET or orbs.size() >= R.ORB_MAX:
 			break
-		place_orb(viewport().grow(800))
+		place_orb(region)

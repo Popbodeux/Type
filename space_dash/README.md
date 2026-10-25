@@ -1,8 +1,10 @@
-# Type — grass / Space-to-dash survival revision
+# Type — grass / Space-to-dash survival v0.2.0
 
-This is a separate, local Godot4.6.3 project based on the inspected older GameMaker snapshot selected by the user. It preserves the previously delivered Chi Circuit project and downloads in the parent folder. It does not use Chi Circuit's invented waves or vulnerable-angle loop.
+This is a separate Godot4.6.3 project based on the inspected older GameMaker snapshot selected by the user. It preserves the earlier Chi Circuit project and downloads. It does not use Chi Circuit's invented waves or vulnerable-angle loop.
 
-**Original grass assets are not available in this executor yet.** The game is visibly marked as using the source checkerboard fallback. Do not label it visually faithful or export it as the final Windows playtest until the originals are materialized, inspected, and parity-reviewed. See [PARITY.md](PARITY.md) for exact matched rules, deliberate fixes, and remaining source gaps.
+**[Download the standalone Windows ZIP](https://raw.githubusercontent.com/Popbodeux/Type/main/downloads/space-dash-v0.2.0/type-space-dash-v0.2.0-windows-x86_64.zip).** Extract the whole archive, then double-click `TypeSpaceDash.exe`. Keep `TypeSpaceDash.pck` beside it. No Godot installation is needed to play. Requires Windows x86_64 with OpenGL3.3 support. This unsigned export has **not been run on Windows or Wine**; Linux source/game-pack checks are documented in [VALIDATION.md](VALIDATION.md).
+
+The three original16×16 grass PNGs are integrated unchanged, with verified hashes/pixels and the source's32px cell hash/tint/sampling. Actors remain placeholders and original audio is absent. See [PARITY.md](PARITY.md) for matched rules and deliberate fixes. Historical regional duplicate-word behavior is retained; the first exact match is highlighted.
 
 Open this folder's `project.godot` in Godot4.6.3, or run:
 
@@ -21,4 +23,4 @@ bash scripts/godot.sh --headless --script res://tests/test_survival.gd
 DISPLAY=:99 python3 tests/record_gameplay.py  # needs Xvfb/X11 display and FFmpeg
 ```
 
-Physics is explicitly fixed at60Hz for the original's frame-based speed and0.085camera lerp. High score persists to the Godot user-data directory as `typergame_save.ini`. Test fixtures use separate ignored save files. No final export or public upload has been performed for this revision; the intended delivery format remains a standalone Windows ZIP after the blockers are resolved.
+Physics is fixed at60Hz for the original's frame-based speed and0.085camera lerp. High score persists to the Godot user-data directory as `typergame_save.ini`. Test fixtures use separate ignored save files. `python3 scripts/package_windows.py` creates the versioned Windows ZIP when official4.6.3 Windows export templates are installed. Bounded restock loops, stable target IDs, frozen gameover stats, and the Resume hitbox fix are deliberate robustness changes.

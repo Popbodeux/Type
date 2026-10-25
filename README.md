@@ -1,4 +1,20 @@
-# Chi Circuit
+# Type — Space-to-dash survival
+
+The latest desktop playtest reconstructs the selected older grass-ground GameMaker version in Godot4.6.3.
+
+**[Download Windows v0.2.0](https://raw.githubusercontent.com/Popbodeux/Type/main/downloads/space-dash-v0.2.0/type-space-dash-v0.2.0-windows-x86_64.zip)** — extract the entire ZIP, then double-click `TypeSpaceDash.exe`. Keep `TypeSpaceDash.pck` beside it. Godot installation is not required to play.
+
+- [Source ZIP v0.2.0](https://raw.githubusercontent.com/Popbodeux/Type/main/downloads/space-dash-v0.2.0/type-space-dash-v0.2.0-source.zip), or open `space_dash/project.godot` from this repository.
+- [Actual gameplay recording](https://raw.githubusercontent.com/Popbodeux/Type/main/media/space-dash-v0.2.0/gameplay.mp4).
+- [Controls and source-parity notes](space_dash/README.md), [validation](space_dash/VALIDATION.md), and [checksums](downloads/space-dash-v0.2.0/SHA256SUMS.txt).
+
+Choose a difficulty and **NEW GAME**. Type an orb's exact case-sensitive word, then press **Space** to dash to it. Backspace edits; Escape pauses; R or Enter restarts gameover. Survive the30-second timer using orb/combat rewards. The original three grass tiles are included unchanged. Actors are placeholders and original audio is absent. Historical regional duplicate-word behavior is preserved.
+
+**The Windows executable has not been run on Windows or Wine.** Export/structure checks and Linux game-pack playthroughs are documented separately. This is a source-based reconstruction with documented safety fixes, not a claim of full original-executable parity.
+
+## Earlier Chi Circuit prototype
+
+The original project and downloads below remain available at their existing paths.
 
 A small, playable **Godot 4.6.3** reconstruction of the described GameMaker typing-action game. The original source is unavailable in this cloud task, so this is a new implementation of the described loop, not a source port or a claim of feature parity.
 

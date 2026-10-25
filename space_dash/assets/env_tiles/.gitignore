@@ -1,4 +1,2 @@
-# Original tiles are private migration inputs, not approved public source assets.
-env_grass_plain_00.png
-env_grass_plain_01.png
-env_grass_plain_04.png
+# The user approved these three original PNGs for this revision's public source.
+# Godot import caches remain excluded by the repository's .godot/ rule.

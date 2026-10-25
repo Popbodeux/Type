@@ -322,6 +322,7 @@ func run() -> void:
 		check(s.seeded_cells.size() == 9, "reset seeds surrounding3x3 cells")
 		check(s.enemies.size() == 4 and s.enemies[0].kind == 0 and s.enemies[1].kind == 0 and s.enemies[2].kind == 1 and s.enemies[3].kind == 2, "reset enemy kinds exactly[0,0,1,2]")
 		near(s.timer, 30, "difficulty does not alter starting timer")
+		s.ensure_local_coverage() # Initial seeding and per-frame coverage are distinct.
 		var in_view := 0
 		var nearby := 0
 		var region: Rect2 = s.viewport(Vector2(56, 42))
@@ -399,6 +400,135 @@ func run() -> void:
 	check(loaded.high_score == 84, "high score persists INI run/high_score")
 	DirAccess.remove_absolute(s.save_path)
 
+	category = "resolved_helper_parity_and_guards"
+	check(R.ORB_BOUNDS.position == Vector2(767, 1259.8) and R.ORB_BOUNDS.end == Vector2(15617, 9389.8), "exact rectangular orb bounds inset55")
+	var corner := R.ORB_BOUNDS.position + Vector2(1, 1)
+	check(R.arena_clamp(corner) == corner, "rectangular arena corners are not projected onto an ellipse")
+	s = fixture()
+	var edge := orb(s, "ash", Vector2(456, 246))
+	check(s.selectable(edge), "right and bottom24px target boundaries are inclusive")
+	edge.pos += Vector2(1, 0)
+	check(not s.selectable(edge), "one pixel outside inclusive target boundary is rejected")
+	s = fixture()
+	var gap := orb(s, "ash", Vector2(700, 0))
+	var distant_region := Rect2(s.player + Vector2(1000, -50), Vector2(100, 100))
+	check(not s.word_available("ash", distant_region), "conflict rectangle includes the gap between region and viewport, not just their disjoint union")
+	s.orbs.clear()
+	s.orb_revision += 1
+	s.difficulty = 2
+	check(s.eligible_words(s.viewport()).size() == 208 and s.eligible_words(s.viewport()).count("meadow") == 2, "enumeration keeps every eligible bank entry and duplicate weighting")
+	orb(s, "meadow")
+	check(s.eligible_words(s.viewport()).count("meadow") == 0, "eligible cache invalidates when a conflict is added")
+	s = fixture()
+	var other := orb(s, "angle", Vector2(500, 0))
+	var sticky := orb(s, "anchor", Vector2(200, 0))
+	write_word(s, "a")
+	check(s.active_id == sticky.id, "sole visible prefix initially locks")
+	other.pos = s.player + Vector2(-200, 0)
+	write_word(s, "n")
+	check(s.active_id == sticky.id, "existing lock survives when another matching prefix enters view")
+	s.queue_backspace()
+	s.tick()
+	check(s.active_id == -1 and s.buffer == "a", "Backspace does not preserve a lock when multiple matches remain")
+	s = fixture()
+	var duplicate_first := orb(s, "ash", Vector2(200, 0))
+	var duplicate_second := orb(s, "ash", Vector2(-200, 0))
+	s.buffer = "as"
+	s.active_id = duplicate_second.id
+	write_word(s, "h")
+	check(s.active_id == duplicate_first.id, "historical first exact match overrides a different prior lock for duplicate words")
+	s.camera_pos += Vector2(1000, 0)
+	check(not s.selectable(duplicate_first) and s.confirm_word(), "confirmation checks identity and equality, not viewport eligibility again")
+	s = fixture()
+	var pruned := orb(s, "beam", Vector2(2200, 0))
+	var stable_target := orb(s, "ash")
+	lock_word(s, stable_target)
+	s.ensure_local_coverage()
+	check(s.find_orb(pruned.id).is_empty() and s.active_id == stable_target.id and s.find_orb(s.active_id).word == "ash", "stable IDs prevent earlier array pruning from changing the selected target")
+	s = fixture()
+	var gone := orb(s, "ash", Vector2(2200, 0))
+	lock_word(s, gone)
+	s.ensure_local_coverage()
+	check(s.active_id == -1 and not s.confirm_word(), "pruned target is safely invalidated instead of retargeting a shifted array index")
+	s = fixture()
+	s.player = R.WORLD + Vector2(100, 100)
+	s.camera_pos = R.ARENA_CENTER
+	s.tick()
+	check(s.camera_pos.distance_to(Vector2(8847.52, 5719.642)) < 0.02, "camera target is world-clamped before .085 lerp")
+	s = fixture()
+	var hurt_enemy: Dictionary = s.make_enemy(2, s.player - Vector2(100, 0))
+	hurt_enemy.hurt = Vector2(16, 11)
+	s.enemies.append(hurt_enemy)
+	s.update_enemies()
+	check(hurt_enemy.hurt.distance_to(Vector2(12.48, 8.58)) < 0.001, "hurt offset retains78percent per update")
+	s = fixture()
+	s.difficulty = 1
+	for ignored in 7:
+		s.enemies.append(s.make_enemy(0, s.player + Vector2(550, 0)))
+	s.maintain_enemies()
+	check(s.enemies.size() == 9, "40px expanded view excludes550px enemy centers and supplements to target+2")
+	s = fixture()
+	for ignored in 7:
+		s.enemies.append(s.make_enemy(0, s.camera_pos + Vector2(520, 0)))
+	s.maintain_enemies()
+	check(s.enemies.size() == 7, "expanded-view right boundary is inclusive and prevents supplements")
+	s = fixture()
+	orb(s)
+	s.toggle_pause()
+	s.queue_character("a")
+	s.queue_character("s")
+	s.queue_character("h")
+	s.tick()
+	check(s.queued_text == "ash" and s.total_keys == 0, "typing during pause remains in keyboard text")
+	s.toggle_pause()
+	s.tick()
+	check(s.buffer == "ash" and s.correct_keys == 3, "Escape resume processes retained paused text")
+	s.toggle_pause()
+	s.queue_character("a")
+	s.toggle_pause()
+	s.skip_resume_tick = true
+	var resume_elapsed: float = s.elapsed
+	s.tick()
+	check(s.elapsed == resume_elapsed and s.queued_text == "a", "mouse resume returns early for one fixed tick")
+	s.tick()
+	check(s.elapsed > resume_elapsed and s.buffer == "a", "mouse-resumed text processes on following tick")
+	s = fixture()
+	orb(s)
+	write_word(s, "ash")
+	s.queue_backspace(false)
+	s.tick()
+	check(s.buffer == "ash", "Backspace echo is not a new explicit keypress edge")
+	s.queue_backspace()
+	s.tick()
+	check(s.buffer == "as", "fresh Backspace edge edits accepted buffer")
+	s = fixture()
+	orb(s, "zz_blocker", Vector2.ZERO)
+	s.rng.seed = 2468
+	var tiny_region := Rect2(s.player - Vector2.ONE, Vector2(2, 2))
+	check(s.place_orb(tiny_region), "exhausted spacing phases still allow the source's fresh unspaced fallback")
+	var expected_rng := RandomNumberGenerator.new()
+	expected_rng.seed = 2468
+	for ignored in 452: #2unused + 2*(96+64+64) rejected samples +2fallback.
+		expected_rng.randf_range(-1, 1)
+	expected_rng.randi_range(0, 47)
+	check(s.rng.state == expected_rng.state, "placement consumes exact source sampling budgets and one uniform eligible-entry draw")
+	s = fixture()
+	s.difficulty = 0
+	var initials := ""
+	for word in R.word_pool(0):
+		if not initials.contains(word[0]):
+			initials += word[0]
+			orb(s, word[0], Vector2(initials.length() * 10, 0))
+	var attempts: int = s.restock_minimum(R.ORB_BOUNDS)
+	check(attempts == 1 and s.orbs.size() < 42 and s.last_spawn_failure == "no_eligible_word", "deliberate exhaustion guard terminates legacy unbounded restock instead of hanging")
+	var scene = load("res://survival.tscn").instantiate()
+	root.add_child(scene)
+	scene.set_physics_process(false)
+	check(scene.tiles.size() == 3 and scene.tile_verification.size() == 3, "all three original16x16 PNGs pass runtime file and pixel verification")
+	for proof in scene.tile_verification:
+		check(proof.verified and proof.file_bytes_verified and proof.width == 16 and proof.height == 16, "original PNG bytes and decoded pixels verified")
+	scene.queue_free()
+
 	category = "terrain_hash_and_repeatability"
 	check(R.tile_index(Vector2i(0, 0)) == 0, "mostly plain00 tile selection")
 	var terrain_examples := {Vector2i(7, 0): 2, Vector2i(14, 0): 1, Vector2i(-7, 0): 2, Vector2i(-14, 0): 1, Vector2i(1, 0): 0, Vector2i(0, 1): 0, Vector2i(0, 9): 2, Vector2i(0, -9): 2}
@@ -426,5 +556,5 @@ func run() -> void:
 		check(s.phase == "playing" and s.elapsed == 0 and s.timer == 30, "survival restarts cleanly run%d" % repetition)
 	print("SURVIVAL CHECKS: %d PASSED: %d FAILED: %d" % [checks, checks - failures.size(), failures.size()])
 	var file := FileAccess.open("res://artifacts/test-results.json", FileAccess.WRITE)
-	file.store_string(JSON.stringify({"checks": checks, "passed": checks - failures.size(), "failures": failures, "categories": categories, "reference": "inspected grass Space-to-dash snapshot", "grass_assets_materialized": false, "windows_exported": false}, "  "))
+	file.store_string(JSON.stringify({"checks": checks, "passed": checks - failures.size(), "failures": failures, "categories": categories, "reference": "inspected grass Space-to-dash snapshot with follow-up helper report", "grass_assets_materialized": true}, "  "))
 	quit(0 if failures.is_empty() else 1)

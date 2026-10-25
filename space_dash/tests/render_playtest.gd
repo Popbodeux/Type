@@ -23,11 +23,12 @@ var title_selected_easy := false
 var resume_top_clicked := false
 var failures: Array[String] = []
 var captured: Dictionary = {}
+var capture_metadata: Dictionary = {}
 var finished := false
 var actions: Array[Dictionary] = []
 
 func _ready() -> void:
-	game.state.save_path = "res://artifacts/render-test-save.ini"
+	game.state.save_path = output_path("render-test-save.ini")
 	game.state.rng.seed = 1764
 
 func key(code: Key, unicode: int = 0, shift: bool = false) -> void:
@@ -82,6 +83,7 @@ func screenshot(name: String) -> void:
 	game.hud.queue_redraw()
 	await RenderingServer.frame_post_draw
 	get_viewport().get_texture().get_image().save_png(output_path(name + ".png"))
+	capture_metadata[name] = {"camera": [game.camera.position.x, game.camera.position.y], "phase": game.state.phase, "timer": game.state.timer}
 
 func choose_orb(near_destination: bool = false) -> Dictionary:
 	var s = game.state
@@ -228,7 +230,9 @@ func finish() -> void:
 		failures.append("mid-dash queued text not observed")
 	if not resume_top_clicked:
 		failures.append("top edge of shared resume hitbox failed")
+	if game.tiles.size() != 3:
+		failures.append("original grass tiles did not load")
 	var file := FileAccess.open(output_path("render-playtest.json"), FileAccess.WRITE)
-	file.store_string(JSON.stringify({"passed": failures.is_empty(), "failures": failures, "runs": run_number, "mid_dash_queue_observed": queue_observed, "space_required": saw_space_required, "resume_top_edge_verified": resume_top_clicked, "grass_tiles_loaded": game.tiles.size(), "assets_status": game.assets_status, "seconds": clock, "actions": actions, "windows_exported": false}, "  "))
+	file.store_string(JSON.stringify({"passed": failures.is_empty(), "failures": failures, "runs": run_number, "mid_dash_queue_observed": queue_observed, "space_required": saw_space_required, "resume_top_edge_verified": resume_top_clicked, "grass_tiles_loaded": game.tiles.size(), "tile_verification": game.tile_verification, "captures": capture_metadata, "assets_status": game.assets_status, "seconds": clock, "actions": actions}, "  "))
 	print("SURVIVAL RENDER: ", "PASS" if failures.is_empty() else "FAIL", " ", failures)
 	get_tree().quit(0 if failures.is_empty() else 1)
